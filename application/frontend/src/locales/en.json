@@ -1,0 +1,268 @@
+{
+  "pros": "Pros",
+  "cons": "Cons",
+  "when_to_preffer_this_approach": "When to prefer this approach",
+
+  "locales": {
+    "en": "English",
+    "ukr": "Ukrainian"
+  },
+
+  "routes": {
+    "home": "Home",
+    "me": "Me",
+    "users": "Users",
+    "admin": "Admin",
+    "how_to_use": "How to use",
+    "login": "Login",
+    "logout": "Logout"
+  },
+
+  "modals": {
+    "delete_user": {
+      "title": "Delete User",
+      "text": "Are you sure you want to delete this user? This action cannot be undone."
+    },
+    "default": {
+      "title": "Confirmation",
+      "text": "Are you sure you want to perform this action?"
+    }
+  },
+
+  "main_view": {
+    "introduction": {
+      "description": "A web application for managing roles of authorized users using Microsoft Graph (v1) or MongoDB (v2).",
+      "details": "The application allows viewing a list of authorized users, managing their roles, and deleting users. It focuses on security, scalability, and clear separation of access control."
+    },
+
+    "problem": {
+      "title": "Problem",
+      "description": "Implementing user roles in Azure AD B2C can be a highly complicated task, as Azure AD B2C does not provide built-in role-based access control (RBAC) like Azure AD. This leads to many challenges and non-obvious workarounds when trying to build secure and maintainable access control logic."
+    },
+
+    "solution": {
+      "title": "Solution",
+      "description": "This challenge is addressed by combining Azure AD B2C API connectors, a custom backend, and claims customization. The API connector stores user role metadata either in an external database or directly in Microsoft Graph, and enriches tokens during the sign-in flow. A secure admin panel interacts with the backend to manage roles, while Azure Functions handle authorization logic and token claims injection — effectively mimicking a flexible PBAC system on top of Azure AD B2C.",
+      "details": "In this project's GitHub repository, you can explore two different approaches to solving this problem: one using a custom database, and another using Microsoft Graph directly. The live version of this site uses the Microsoft Graph-based implementation."
+    },
+
+    "functionality_section": {
+      "title": "Core Functionality",
+      "features": [
+        "View authorized users, manage their roles, or remove users with lower privileges using the <strong>Microsoft Graph API</strong>.",
+        "Role assignment options include: <strong class=\"text-gray-900\">Manager</strong>, <strong class=\"text-gray-900\">Moderator</strong>, <strong class=\"text-gray-900\">Admin</strong>.",
+        "<strong>Administrators</strong> can assign the Manager and Moderator roles, and remove users who have lower roles than theirs.",
+        "<strong>Owners</strong> have full access to the system, including the ability to assign or remove any role, including administrators.",
+        "The web application includes route protection based on roles retrieved from the token."
+      ]
+    },
+
+    "technologies_used": {
+      "title": "Technologies Used"
+    }
+  },
+
+  "me_view": {
+    "loading": "Loading...",
+    "idTokenClaimsTitle": "ID Token Claims",
+    "userIdTitle": "User ID",
+    "userIdMapped": "Mapped from the <code>sub</code> claim",
+    "claimLabel": "Claim",
+    "valueLabel": "Value",
+    "descriptionLabel": "Description",
+    "noDescription": "—"
+  },
+
+  "users_view": {
+    "title": "Latest Registered Users",
+    "loadingMessage": "Loading...",
+    "noUsersMessage": "No users found.",
+    "userDetailsTitle": "User Details",
+    "labels": {
+      "id": "ID",
+      "displayName": "Display Name",
+      "created": "Created",
+      "role": "Role",
+      "roleNotProvided": "Not provided"
+    }
+  },
+
+  "how_to_use": {
+    "introduction": {
+      "title": "How to use",
+      "steps": [
+        "Sign in with your account (or use the provided demo credentials).",
+        "Go to the “Me” page to view your profile details.",
+        "Visit the “Users” page to browse and search all users.",
+        "If you have the appropriate role, use the “Admin” page to manage users."
+      ]
+    },
+
+    "sign_in": {
+      "title": "1. Sign In",
+      "description": "Click the “Sign In” button in the header and authenticate with your Microsoft account.",
+      "admin_demo_credentials": "Administrator Demo Credentials",
+      "email_label": "Email:",
+      "password_label": "Password:"
+    },
+
+    "pages_overview": {
+      "title": "2. Pages Overview",
+
+      "pages": [
+        {
+          "title": "Me",
+          "text": "The 'Me' page is your personal dashboard. Here you can see all the claims decoded from your ID token — things like your user ID, email, roles, authentication time, and any custom attributes. Use this view to verify your login flow."
+        },
+        {
+          "title": "Users",
+          "text": "On the 'Users' page you'll find the five most recently registered users, fetched directly from Microsoft Graph. Each entry shows the display name, user ID, assigned role, and registration timestamp."
+        },
+        {
+          "title": "Admin",
+          "text": "The 'Admin' page is only accessible if your token includes the claim extension_AzureAdminPageRole. Here you can edit user roles, remove accounts, and test all administrative functions."
+        }
+      ]
+    },
+
+    "rbac_comparison": {
+      "title": "3. Approaches to RBAC",
+      "description": "There are two general approaches for implementing Role-Based Access Control (RBAC) in modern web apps. Below is a comparison between integrating with Azure Entra (Microsoft Graph) and using a custom role management system based on an external database.",
+      "approaches": [
+        {
+          "title": "1. Microsoft Graph API Approach",
+          "description": "Roles and other claims are managed directly in Azure Active Directory Business to Consumer and can be retrieved either from the ID token or dynamically via Microsoft Graph API.",
+          "pros": [
+            "No need to maintain a separate database for role storage.",
+            "Supports SSO out of the box: Users can seamlessly access multiple applications under one tenant with the same login.",
+            "Security through token-based access: queries require valid access tokens, improving control and traceability.",
+            "Centralized identity and access management within Azure ecosystem.",
+            "High stability and scalability: Microsoft Graph API is hosted on Azure's robust infrastructure, designed to handle large-scale traffic reliably."
+          ],
+          "cons": [
+            "Custom claims require globally unique names — this can become confusing across multiple apps.",
+            "SSO maintenance complexity: Removing a user deletes them from all tenant applications, complicating user lifecycle management.",
+            "Limited flexibility: Custom mappings or logic require advanced Entra configuration or external tools.",
+            "Microsoft Graph API performance is slow, even for basic queries. This impacts UX, especially during login flows.",
+            "Microsoft Graph for Azure AD B2C offers very limited support for filtering, sorting, or pagination of user data."
+          ],
+          "whenToUse": [
+            "Your application only needs a small amount of identity metadata (e.g., 1–2 fields like role).",
+            "You want to avoid managing your own user database and rely solely on Azure.",
+            "Security and centralized control are more important than performance or query flexibility."
+          ]
+        },
+        {
+          "title": "2. External Database Approach (Recommended)",
+          "description": "Users and roles are stored in your own backend database — in our case, MongoDB — synchronized with Azure Active Directory Business to Consumer during user creation. This approach is highly recommended for production-grade applications where performance and flexibility are critical.",
+          "pros": [
+            "Extremely fast: ~40-70ms response time vs 400–1500ms from Graph API.",
+            "Maximum flexibility: Full control over queries, filtering, pagination, or even GraphQL if desired.",
+            "Easy integration of custom claims: Any additional data or rules can be injected from the backend.",
+            "Supports advanced use cases: Role-based access, permissions, multi-tenancy, etc.",
+            "Simplifies testing and maintenance: Everything is under your control."
+          ],
+          "cons": [
+            "Requires extra backend logic: Syncing users on creation.",
+            "Lower security by default: You’re responsible for securing endpoints and preventing data leaks.",
+            "Potential for overload: Unlike Graph API, performance under high load depends on your infrastructure."
+          ],
+          "whenToUse": [
+            "You need a fast, flexible, and scalable user management system.",
+            "You want to decouple user logic from the identity provider.",
+            "Your users have many custom fields or app-specific metadata.",
+            "You want full control over role resolution and permissions logic."
+          ]
+        }
+      ]
+    },
+
+    "important_note": {
+      "title": "Note:",
+      "text": "Please do <strong>not</strong> modify or delete the pre-created accounts. Removing an account in Microsoft Graph will delete it from all tenant applications of the site owner. You may only modify or delete accounts <strong>created by yourself</strong>."
+    }
+  },
+
+  "user_card": {
+    "title": "User Details",
+    "labels": {
+      "id": "ID",
+      "displayName": "Display Name",
+      "jobTitle": "Job Title",
+      "department": "Department",
+      "created": "Created",
+      "accountEnabled": "Account Enabled",
+      "syncedFromOnPrem": "Synced from On-Prem?",
+      "preferredLanguage": "Preferred Language",
+      "roles": "Roles",
+      "roleNotProvided": "Not provided"
+    },
+    "rolesSectionTitle": "Roles",
+
+    "buttons": {
+      "submit": "Submit",
+      "delete": "Delete"
+    },
+
+    "not_provided": "Not provided",
+
+    "yes": "Yes",
+    "no": "No"
+  },
+
+  "user_search": {
+    "placeholder": "Enter user ID",
+    "searchButton": "Search",
+    "noUserSelected": "No user selected"
+  },
+
+  "notifications": {
+    "noChanges": "No changes detected",
+    "updateSuccess": "Updated successfully",
+    "deleteSuccess": "Successfully deleted",
+    "unexpectedError": "Unexpected error. Please check the console.",
+    "errors": {
+      "400": "Bad request. Arguments are missing.",
+      "401": "Unauthorized. Please log in again.",
+      "403": "You don't have permission to perform this action.",
+      "404": "Resource not found.",
+      "500": "Server error. Please try again later."
+    },
+    "auth": {
+      "loginFailed": "Login failed",
+      "logoutFailed": "Logout failed",
+      "authError": "Authentication error, please try again",
+      "tokenMissing": "Failed to get token",
+      "tokenAcquisitionFailed": "Token acquisition failed"
+    },
+    "users": {
+      "fetchError": "Failed to fetch users"
+    }
+  },
+
+  "claim_explanations": {
+    "sub": "Unique identifier for the user within the application.",
+    "name": "Full name of the user.",
+    "given_name": "User’s first name.",
+    "family_name": "User’s last name.",
+    "displayName": "User's display name.",
+    "email": "Primary email address of the user.",
+    "emails": "List of user’s email addresses.",
+    "role": "User's assigned role(s).",
+    "oid": "Object ID — unique identifier for the user in Azure AD.",
+    "sid": "Session ID — unique identifier of the user’s session.",
+    "idp": "Identity provider used to authenticate the user (e.g., Google, Facebook, local account).",
+    "tfp": "Trust Framework Policy (e.g., B2C_1_signin) — defines the user flow.",
+    "nonce": "Value used to prevent token replay attacks.",
+    "ver": "Version of the token (e.g., 1.0 or 2.0).",
+    "iat": "Issued At — time when the token was issued (in UNIX timestamp).",
+    "nbf": "Not Before — token is not valid before this time.",
+    "exp": "Expiration time — when the token will expire.",
+    "auth_time": "Time when the user was authenticated.",
+    "azp": "Authorized party — the app client ID for which the token was issued.",
+    "azpacr": "Authentication method used (e.g., pwd, mfa).",
+    "iss": "Issuer — identifies the authorization server that issued the token.",
+    "aud": "Audience — identifies the intended recipient(s) of the token.",
+    "extension_AzureAdminPageRole": "Custom claim representing the user’s roles."
+  }
+}
