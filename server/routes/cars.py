@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from playhouse.shortcuts import model_to_dict
-from models import db, Car, User
+from db.models import db, Car, User
 
 car_bp = Blueprint('car_bp', __name__)
 

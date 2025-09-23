@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from playhouse.shortcuts import model_to_dict
-from models import db, Transaction, User
+from db.models import db, Transaction, User
 
 transaction_bp = Blueprint('transaction_bp', __name__)
 

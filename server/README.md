@@ -29,4 +29,4 @@ The API endpoints available:
 - PUT /users/<id> - update user
 - DELETE /users/<id> - delete user
 
-The SQLite DB file `app.db` will be created next to the server code.`
+The SQLite DB file `app.db` will be created in folder "db" if not changed in .env file.`

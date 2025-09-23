@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from playhouse.shortcuts import model_to_dict
-from models import db, UserRole, User, Role
+from db.models import db, UserRole, User, Role
 
 userrole_bp = Blueprint('userrole_bp', __name__)
 

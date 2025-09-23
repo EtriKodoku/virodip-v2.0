@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from playhouse.shortcuts import model_to_dict
-from models import db, UserSubscription
+from db.models import db, UserSubscription
 
 subscription_bp = Blueprint('subscription_bp', __name__)
 
