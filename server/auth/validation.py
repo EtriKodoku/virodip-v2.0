@@ -1,9 +1,6 @@
-# Install dependencies: pip install pyjwt requests cryptography
-
 import requests
 import jwt
 from jwt import PyJWKClient
-from python_dotenv import load_dotenv
 from config.config import db_config
 
 POLICY = "B2C_1_signupsignin"

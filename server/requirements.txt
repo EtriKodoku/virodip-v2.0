@@ -2,3 +2,5 @@ Flask>=2.0
 peewee>=3.15
 playhouse
 python-dotenv
+jwt
+Flask-Cors>=6.0.1

@@ -1,63 +1,45 @@
-import os
 import requests
 from flask import Blueprint, request, jsonify
-from dotenv import load_dotenv
-
-load_dotenv()
+from db.models import User
+from config.azure_config import azure_config
+from utils.graphAPI import create_b2c_user
+from utils.roles import get_roles, register_roles
 
 user_bp = Blueprint('user_bp', __name__)
 
-def get_graph_access_token():
-    url = f"https://login.microsoftonline.com/{os.getenv('AZURE_TENANT_ID')}/oauth2/v2.0/token"
-    data = {
-        "client_id": os.getenv("AZURE_CLIENT_ID"),
-        "client_secret": os.getenv("AZURE_CLIENT_SECRET"),
-        "scope": "https://graph.microsoft.com/.default",
-        "grant_type": "client_credentials"
-    }
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    resp = requests.post(url, data=data, headers=headers)
-    resp.raise_for_status()
-    return resp.json()["access_token"]
-
-def create_b2c_user(user_data):
-    token = get_graph_access_token()
-    url = "https://graph.microsoft.com/v1.0/users"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-    resp = requests.post(url, json=user_data, headers=headers)
-    resp.raise_for_status()
-    return resp.json()
-
+## TODO Registration for peasants
 @user_bp.route('/register', methods=['POST'])
 def register_user():
     data = request.get_json()
-    # You may want to validate data here!
-    user_data = {
-        "accountEnabled": True,
-        "displayName": data["displayName"],
-        "mailNickname": data["mailNickname"],
-        "userPrincipalName": data["userPrincipalName"],  # e.g. johndoe@yourtenant.onmicrosoft.com
-        "passwordProfile": {
-            "forceChangePasswordNextSignIn": True,
-            "password": data["password"]  # You may want to generate a strong password
-        }
-    }
     try:
-        result = create_b2c_user(user_data)
-        return jsonify(result), 201
+        user, created = User.get_or_create( ## TODO Do we need to get_or_create here?
+            id=data.get('objectId'),
+            name=data.get('displayName'),
+            email=data.get('email')
+        )
+        roles = get_roles(data.get('email'))
+        register_roles(user=user, roles=roles) ## TODO Handle the result
+        result = create_b2c_user(data) ## TODO Test it
+        return {
+                    "status": 200,
+                    "jsonBody": {
+                    "version": "1.0.0",
+                    "action": "Continue",
+                    f"extension_{azure_config.AZURE_EXTENSION_APP_ID}_Roles": roles,
+                    },
+                }
     except requests.HTTPError as e:
         return jsonify({"error": str(e), "details": e.response.json()}), 400
 
 @user_bp.route('/delete', methods=['DELETE'])
-def delete_user_by_id(user_id: str):
-	access_token = get_graph_access_token()
-	url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
-	headers = {
-		"Authorization": f"Bearer {access_token}"
-	}
-	resp = requests.delete(url, headers=headers)
-	resp.raise_for_status()
-	return resp.status_code
+def delete_user():
+    data = request.get_json()
+    user_id = data.get("userId")
+    if not user_id:
+        return jsonify({"error": "userId is required"}), 400
+    try:
+        # Implement the logic to delete the user from Azure B2C
+        # This is a placeholder for actual deletion logic
+        return jsonify({"message": f"User {user_id} deleted successfully"}), 200
+    except requests.HTTPError as e:
+        return jsonify({"error": str(e), "details": e.response.json()}), 400

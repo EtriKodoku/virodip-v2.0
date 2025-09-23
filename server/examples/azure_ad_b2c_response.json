@@ -1,0 +1,25 @@
+{
+ "email": "johnsmith@fabrikam.onmicrosoft.com",
+ "identities": [
+     {
+     "signInType":"federated",
+     "issuer":"facebook.com",
+     "issuerAssignedId":"0123456789"
+     }
+ ],
+ "displayName": "John Smith",
+ "objectId": "aaaaaaaa-0000-1111-2222-bbbbbbbbbbbb",
+ "givenName":"John",
+ "surname":"Smith",
+ "jobTitle":"Supplier",
+ "streetAddress":"1000 Microsoft Way",
+ "city":"Seattle",
+ "postalCode": "12345",
+ "state":"Washington",
+ "country":"United States",
+ "extension_<extensions-app-id>_CustomAttribute1": "custom attribute value",
+ "extension_<extensions-app-id>_CustomAttribute2": "custom attribute value",
+ "step": "<step-name>",
+ "client_id":"00001111-aaaa-2222-bbbb-3333cccc4444",
+ "ui_locales":"en-US"
+}
