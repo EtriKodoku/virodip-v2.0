@@ -1,6 +1,8 @@
 Flask>=2.0
-peewee>=3.15
-playhouse
-python-dotenv
-jwt
 Flask-Cors>=6.0.1
+peewee>=3.15
+playhouse>=0.1.0
+python-dotenv>=1.1.1
+pyjwt>=2.10.1
+requests>=2.32.5
+pydantic-settings-2.11.0

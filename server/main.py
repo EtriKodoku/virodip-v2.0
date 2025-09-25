@@ -16,14 +16,14 @@ CORS(app)
 # app.wsgi_app = SimpleMiddleware(app.wsgi_app)
 
 # Register blueprints for all models
-app.register_blueprint(user_bp, url_prefix="/users") #
-app.register_blueprint(role_bp )
+app.register_blueprint(user_bp, url_prefix="/users")
+app.register_blueprint(role_bp)
 app.register_blueprint(subscription_bp)
-app.register_blueprint(car_bp, url_prefix="/cars") #
-app.register_blueprint(transaction_bp, url_prefix="/transactions") #
-app.register_blueprint(userrole_bp, url_prefix="/userroles") #
-#app.register_blueprint() #
+app.register_blueprint(car_bp, url_prefix="/cars")
+app.register_blueprint(transaction_bp, url_prefix="/transactions")
+app.register_blueprint(userrole_bp, url_prefix="/userroles")
 
-if __name__ == '__main__':
-	init_db()  # <-- Add this line
-	app.run(debug=True, host='127.0.0.1', port=5000)
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True, host="127.0.0.1", port=5000)

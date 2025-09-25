@@ -18,7 +18,7 @@ pip install -r requirements.txt
 3. Run the app:
 
 ```powershell
-python main.py
+python -m main
 ```
 
 The API endpoints available:

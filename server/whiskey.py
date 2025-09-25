@@ -6,18 +6,21 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# TODO 
+
+# TODO
 class SimpleMiddleware:
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
         # Пропускаємо preflight CORS та публічні endpoint-и
-        if (environ.get("REQUEST_METHOD") == "OPTIONS" 
-        # or ("users" in environ.get("RAW_URI", ""))
-        # or "cars" in environ.get("RAW_URI", "")
-        # or "transactions" in environ.get("RAW_URI", "")
-        # or ("public" in environ.get("RAW_URI", ""))
+        if (
+            environ.get("REQUEST_METHOD")
+            == "OPTIONS"
+            # or ("users" in environ.get("RAW_URI", ""))
+            # or "cars" in environ.get("RAW_URI", "")
+            # or "transactions" in environ.get("RAW_URI", "")
+            # or ("public" in environ.get("RAW_URI", ""))
         ):
             return self.app(environ, start_response)
         try:
@@ -27,7 +30,7 @@ class SimpleMiddleware:
                 token_data = validate_token(token)
                 environ["token_data"] = token_data
             elif auth_header == f"ESP32 {os.getenv('ESP_32')}":
-                environ["token_data"] = auth_header  
+                environ["token_data"] = auth_header
             else:
                 raise ValueError("No Bearer token found")
         except Exception as e:
