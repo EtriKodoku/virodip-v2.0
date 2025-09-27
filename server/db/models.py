@@ -1,104 +1,110 @@
+
 from datetime import datetime
-from peewee import (
-    Model,
-    SqliteDatabase,
-    AutoField,
-    CharField,
-    DateTimeField,
-    ForeignKeyField,
-    TextField,
-    BooleanField,
-    DecimalField,
-    IntegerField,
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    Integer,
+    Boolean,
+    DateTime,
+    Text,
+    DECIMAL,
+    ForeignKey,
+    UniqueConstraint,
 )
-from playhouse.shortcuts import model_to_dict
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from config.config import db_config
 
-db = SqliteDatabase(db_config.DB_PATH)
+engine = create_engine(f"sqlite:///{db_config.DB_PATH}", echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+Base = declarative_base()
 
+class Role(Base):
+    __tablename__ = "role"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    role_users = relationship("UserRole", back_populates="role")
 
-class BaseModel(Model):
-    class Meta:
-        database = db
+class Tier(Base):
+    __tablename__ = "tier"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    price = Column(DECIMAL(10, 2), nullable=False)
+    description = Column(Text, nullable=True)
+    subscriptions = relationship("UserSubscription", back_populates="tier")
 
+class UserSubscription(Base):
+    __tablename__ = "user_subscription"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tier_id = Column(Integer, ForeignKey("tier.id"), nullable=False)
+    active = Column(Boolean, default=True)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    end_at = Column(DateTime, nullable=True)
+    tier = relationship("Tier", back_populates="subscriptions")
+    user = relationship("User", back_populates="subscription", uselist=False)
 
-class Role(BaseModel):
-    id = AutoField()
-    name = CharField(unique=True)
+class User(Base):
+    __tablename__ = "user"
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    phone_number = Column(String, nullable=True)
+    avatar_url = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    subscription_id = Column(Integer, ForeignKey("user_subscription.id"), unique=True, nullable=True)
+    subscription = relationship("UserSubscription", back_populates="user", uselist=False)
+    cars = relationship("Car", back_populates="owner")
+    transactions = relationship("Transaction", back_populates="user")
+    user_roles = relationship("UserRole", back_populates="user")
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-class Tier(BaseModel):
-    id = AutoField()
-    name = CharField(unique=True)
-    price = DecimalField(max_digits=10, decimal_places=2)
-    description = TextField(null=True)
+class Car(Base):
+    __tablename__ = "car"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    owner_id = Column(String, ForeignKey("user.id"), nullable=False)
+    brand = Column(String, nullable=False)
+    model = Column(String, nullable=False)
+    license_plate = Column(String, unique=True, nullable=False)
+    color = Column(String, nullable=True)
+    owner = relationship("User", back_populates="cars")
 
+class Transaction(Base):
+    __tablename__ = "transaction"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, ForeignKey("user.id"), nullable=False)
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    description = Column(Text, nullable=True)
+    status = Column(String, default="pending")
+    user = relationship("User", back_populates="transactions")
 
-class UserSubscription(BaseModel):
-    id = AutoField()
-    tier = ForeignKeyField(Tier, backref="subscriptions", null=False)
-    active = BooleanField(default=True)
-    started_at = DateTimeField(default=datetime.utcnow)
-    end_at = DateTimeField(null=True)
+class UserRole(Base):
+    __tablename__ = "user_role"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, ForeignKey("user.id"), nullable=False)
+    role_id = Column(Integer, ForeignKey("role.id"), nullable=False)
+    user = relationship("User", back_populates="user_roles")
+    role = relationship("Role", back_populates="role_users")
 
+class Parking(Base):
+    __tablename__ = "parking"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    location = Column(String, nullable=False)
+    latitude = Column(DECIMAL(9, 6), nullable=False)
+    longitude = Column(DECIMAL(9, 6), nullable=False)
+    capacity = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    parking_lots = relationship("ParkingLot", back_populates="parking")
 
-class User(BaseModel):
-    id = CharField(primary_key=True)
-    name = CharField()
-    email = CharField(unique=True)
-    phone_number = CharField(null=True)
-    avatar_url = TextField(null=True)
-    created_at = DateTimeField(default=datetime.utcnow)
-    subscription = ForeignKeyField(
-        UserSubscription, backref="user", null=True, unique=True
-    )
-
-    def to_dict(self, backrefs=True):
-        return model_to_dict(self, backrefs=backrefs)
-
-
-class Car(BaseModel):
-    id = AutoField()
-    owner = ForeignKeyField(User, backref="cars")
-    brand = CharField()
-    model = CharField()
-    license_plate = CharField(unique=True)
-    color = CharField(null=True)
-
-
-class Transaction(BaseModel):
-    id = AutoField()
-    user = ForeignKeyField(User, backref="transactions")
-    amount = DecimalField(max_digits=10, decimal_places=2)
-    timestamp = DateTimeField(default=datetime.utcnow)
-    description = TextField(null=True)
-    status = CharField(default="pending")  # e.g., pending, completed, failed
-
-
-# Many-to-many through table for User <-> Role
-class UserRole(BaseModel):
-    id = AutoField()
-    user = ForeignKeyField(User, backref="user_roles")
-    role = ForeignKeyField(Role, backref="role_users")
-
-
-class Parking(BaseModel):
-    id = AutoField()
-    location = CharField()
-    latitude = DecimalField(max_digits=9, decimal_places=6)
-    longitude = DecimalField(max_digits=9, decimal_places=6)
-    capacity = IntegerField()  # TODO Ask Rostik if we need it
-    created_at = DateTimeField(default=datetime.utcnow)
-
-
-class Parking_Lot:
-    id = AutoField()
-    status = CharField(default="free")  # e.g., taken, free
-    timestamp = DateTimeField(default=datetime.utcnow)
-    parking = ForeignKeyField(Parking, backref="parking_lots")
-
+class ParkingLot(Base):
+    __tablename__ = "parking_lot"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    status = Column(String, default="free")
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    parking_id = Column(Integer, ForeignKey("parking.id"), nullable=False)
+    parking = relationship("Parking", back_populates="parking_lots")
 
 def init_db():
-    db.connect(reuse_if_open=True)
-    db.create_tables([Role, UserSubscription, User, Car, Transaction, UserRole])
-    db.close()
+    Base.metadata.create_all(bind=engine)
