@@ -1,5 +1,5 @@
 import os
-from auth.validation import validate_token
+from auth.validation import check_basic_auth
 from werkzeug.wrappers import Response
 from dotenv import load_dotenv
 
@@ -24,15 +24,7 @@ class SimpleMiddleware:
         ):
             return self.app(environ, start_response)
         try:
-            auth_header = environ.get("HTTP_AUTHORIZATION", "")
-            if auth_header.startswith("Bearer "):
-                token = auth_header.replace("Bearer ", "")
-                token_data = validate_token(token)
-                environ["token_data"] = token_data
-            elif auth_header == f"ESP32 {os.getenv('ESP_32')}":
-                environ["token_data"] = auth_header
-            else:
-                raise ValueError("No Bearer token found")
+            check_basic_auth(environ)
         except Exception as e:
             response = Response(
                 response='{"error": "Unauthorized"}',

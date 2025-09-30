@@ -17,7 +17,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Uncomment for production
-# app.wsgi_app = SimpleMiddleware(app.wsgi_app)
+app.wsgi_app = SimpleMiddleware(app.wsgi_app)
 
 # REDO to this format instead of @
 # def db_session():
