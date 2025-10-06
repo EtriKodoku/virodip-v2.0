@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, g
 
 from db.models import User, Car
 from config.azure_config import azure_config
+from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
 from utils.roles import get_roles, register_roles
 
@@ -57,9 +58,11 @@ def register_user():
         }
     except requests.HTTPError as e:
         g.db.rollback()
+        logger.error(f"HTTP error in user registration: {e}, response: {e.response.json()}")
         return jsonify({"error": str(e), "details": e.response.json()}), 400
     except Exception as e:
         g.db.rollback()
+        logger.error(f"Error in user registration: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -67,8 +70,6 @@ def register_user():
 @user_bp.route("/<string:user_id>", methods=["DELETE"])
 def delete_user(user_id):
     ##TODO Do we need to delete the user from Azure B2C as well?
-    # data = request.get_json()
-    # user_id = data.get("userId")
     db: DbSessionType = cast(DbSessionType, g.db)
 
     if not user_id:
@@ -83,7 +84,7 @@ def delete_user(user_id):
         db.delete(user)
         db.commit()
 
-        return jsonify({"status": "success", "message": f"User {user_id} deleted"}), 200
+        return jsonify({"status": "success", "message": f"User {user_id} deleted"}), 204
 
     except Exception as e:
         db.rollback()
@@ -110,7 +111,7 @@ def get_user(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        return jsonify(user.get_all_info()), 200
+        return jsonify(user.to_dict()), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -132,6 +133,8 @@ def patch_user(user_id):
             user.name = data["name"]
         if "email" in data:
             user.email = data["email"]
+        if "phoneNumber" in data:
+            user.phone = data["phone"]
 
         db.commit()
         return jsonify(user.to_dict()), 200
@@ -233,7 +236,7 @@ def delete_user_car(user_id, car_id):
         db.delete(car)
         db.commit()
 
-        return jsonify({"status": "success", "message": f"Car {car_id} deleted"}), 200
+        return jsonify({"status": "success", "message": f"Car {car_id} deleted"}), 204
 
     except Exception as e:
         db.rollback()

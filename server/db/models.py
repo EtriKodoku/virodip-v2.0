@@ -133,7 +133,7 @@ class Car(Base):
     def to_dict(self):
         return {
             "id": self.id,
-            "numbers": self.license_plate,
+            "number": self.license_plate,
             "brand": self.brand,
             "model": self.model,
             "color": self.color,
