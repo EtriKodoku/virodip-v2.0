@@ -30,7 +30,7 @@ def register_user():
             user = User(
                 id=data.get("objectId"),
                 name=data.get("displayName"),
-                email=data.get("email"),
+                email=data.get("email")
             )
             db.add(user)
             db.commit()
