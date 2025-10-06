@@ -3,6 +3,8 @@ from auth.validation import check_basic_auth
 from werkzeug.wrappers import Response
 from dotenv import load_dotenv
 
+from config.logs_config import logger
+
 # Load environment variables
 load_dotenv()
 
@@ -24,8 +26,8 @@ class SimpleMiddleware:
         ):
             return self.app(environ, start_response)
         try:
-            check_basic_auth(environ)
-        except Exception as e:
+            assert check_basic_auth(environ)
+        except AssertionError:
             response = Response(
                 response='{"error": "Unauthorized"}',
                 status=401,
@@ -33,7 +35,7 @@ class SimpleMiddleware:
             )
             return response(environ, start_response)
 
-        print(
+        logger.info(
             f"Incoming request to {environ.get('PATH_INFO')} with token_data: {environ.get('token_data')}"
         )
         return self.app(environ, start_response)
