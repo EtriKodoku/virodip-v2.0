@@ -31,7 +31,7 @@ def register_user():
             user = User(
                 id=data.get("objectId"),
                 name=data.get("displayName"),
-                email=data.get("email")
+                email=data.get("email"),
             )
             db.add(user)
             db.commit()
@@ -53,12 +53,14 @@ def register_user():
             "jsonBody": {
                 "version": "1.0.0",
                 "action": "Continue",
-                f"extension_{azure_config.AZURE_EXTENSION_APP_ID}_Roles": roles,
+                f"extension_{azure_config.AZURE_EXTENSION_APP_ID}_Role": roles,
             },
         }
     except requests.HTTPError as e:
         g.db.rollback()
-        logger.error(f"HTTP error in user registration: {e}, response: {e.response.json()}")
+        logger.error(
+            f"HTTP error in user registration: {e}, response: {e.response.json()}"
+        )
         return jsonify({"error": str(e), "details": e.response.json()}), 400
     except Exception as e:
         g.db.rollback()

@@ -29,12 +29,12 @@ def register_roles(user, roles):
         try:
             # Check if the user already has this role
             existing_user_role = (
-                g.db.query(UserRole)
-                .filter_by(user_id=user.id, role_id=role.id)
-                .first()
+                g.db.query(UserRole).filter_by(user_id=user.id, role_id=role.id).first()
             )
             if existing_user_role:
-                logger.info(f"User {user.email} already has role [{role_name}], skipping assignment.")
+                logger.info(
+                    f"User {user.email} already has role [{role_name}], skipping assignment."
+                )
                 continue  # Skip adding if the role already exists for the user
         except Exception as e:
             logger.error(f"Error checking existing role: {e}")
@@ -48,7 +48,5 @@ def register_roles(user, roles):
             logger.error(f"Error while assigning role to user: {e}")
             g.db.rollback()
             continue
-    
+
     return "Success"  ## TODO Change to proper logging
-
-

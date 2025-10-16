@@ -27,6 +27,7 @@ class AzureConfig(Settings):
     AZURE_TENANT_NAME: str
     AZURE_CLIENT_SECRET: str
     AZURE_EXTENSION_APP_ID: str
+    AZURE_USER_FLOW: str
 
 
 azure_config = AzureConfig()
