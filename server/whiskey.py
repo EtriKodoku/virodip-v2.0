@@ -15,11 +15,18 @@ class SimpleMiddleware:
 
     def __call__(self, environ, start_response):
         # Skip preflight CORS and public endpoints
-        if environ.get("REQUEST_METHOD") == "OPTIONS" or "public" in environ.get(
-            "RAW_URI", ""
-        ):
-            logger.info("Skipping auth for preflight or public endpoint:", environ)
-            return self.app(environ, start_response)
+        if environ.get("REQUEST_METHOD") == "OPTIONS":
+            logger.info("Handling preflight (CORS) request directly.")
+            response = Response(
+                response="",
+                status=200,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                },
+            )
+            return response(environ, start_response)
 
         # Basic Auth for user registration
         elif "users/register" in environ.get("RAW_URI", ""):
@@ -42,15 +49,8 @@ class SimpleMiddleware:
                     environ["token_data"] = token_data
                 else:
                     raise ValueError("No Bearer token found")
-            except ValueError:
-                response = Response(
-                    response='{"error": "Unauthorized"}',
-                    status=401,
-                    content_type="application/json",
-                )
-                return response(environ, start_response)
             except Exception as e:
-                logger.error(f"Error in token validation: {e}")
+                logger.error(f"Error while auth: {e}")
                 response = Response(
                     response='{"error": "Unauthorized"}',
                     status=401,
