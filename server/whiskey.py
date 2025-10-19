@@ -28,6 +28,13 @@ class SimpleMiddleware:
             )
             return response(environ, start_response)
 
+        # Public endpoint for getting parkings
+        elif environ.get("PATH_INFO", "").startswith("/parkings") and environ.get(
+            "REQUEST_METHOD"
+        ) == "GET":
+            logger.info("Accessing public endpoint without authentication.")
+            return self.app(environ, start_response)
+        
         # Basic Auth for user registration
         elif "users/register" in environ.get("RAW_URI", ""):
             try:
