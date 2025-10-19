@@ -135,7 +135,7 @@ def patch_user(user_id):
             user.name = data["name"]
         if "email" in data:
             user.email = data["email"]
-        if "phoneNumber" in data:
+        if "phone" in data:
             user.phone_number = data["phone"]
 
         db.commit()
@@ -156,7 +156,7 @@ def create_car(user_id):
             return jsonify({"error": "User not found"}), 404
 
         new_car = Car(
-            license_plate=data["numbers"],
+            license_plate=data["number"],
             brand=data["brand"],
             model=data["model"],
             color=data["color"],

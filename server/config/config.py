@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
 
 class DataBaseConfig(Settings):
-    DB_CONNECTION: str = "db/db.sqlite3"
+    DB_CONNECTION: str = "sqlite:///db/db.sqlite3"
 
 
 class ManagerConfig(Settings):
