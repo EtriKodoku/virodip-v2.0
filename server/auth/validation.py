@@ -10,6 +10,9 @@ from config.logs_config import logger
 
 # Constants
 B2C_CONFIG_URL = f"https://{azure_config.AZURE_TENANT_NAME}.b2clogin.com/{azure_config.AZURE_TENANT_NAME}.onmicrosoft.com/{azure_config.AZURE_USER_FLOW}/v2.0/.well-known/openid-configuration"
+_metadata = requests.post(B2C_CONFIG_URL).json()
+_jwks_uri, ISSUER = _metadata["jwks_uri"], _metadata["issuer"]
+JWK_CLIENT = PyJWKClient(_jwks_uri)
 
 
 def check_basic_auth(request) -> bool:
@@ -31,35 +34,23 @@ def check_basic_auth(request) -> bool:
     )
 
 
-def get_jwks_uri():
-    metadata = requests.post(B2C_CONFIG_URL).json()
-    logger.info(f"Fetched B2C metadata: {metadata}")
-    return metadata["jwks_uri"], metadata["issuer"]
-
-
 def validate_bearer_token(token: str):
     try:
-        jwks_uri, issuer = get_jwks_uri()
-        jwks_client = PyJWKClient(jwks_uri)
-    except Exception as e:
-        logger.error(f"Error fetching JWKS: {e}")
-        return None
-    try:
-        signing_key = jwks_client.get_signing_key_from_jwt(token).key
+        signing_key = JWK_CLIENT.get_signing_key_from_jwt(token).key
     except Exception as e:
         logger.error(f"Error getting signing key: {e}")
         return None
     try:
         # Verify and decode token
         logger.info(f"Validating token: {token}")
+        logger.info(f"audience:{azure_config.AZURE_CLIENT_ID}")
         decoded = jwt.decode(
             token,
             signing_key,
             algorithms=["RS256"],
             audience=azure_config.AZURE_CLIENT_ID,
-            issuer=issuer,
+            issuer=ISSUER,
         )
-
         return decoded
     except jwt.ExpiredSignatureError:
         logger.error("Token has expired")

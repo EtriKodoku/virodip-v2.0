@@ -18,7 +18,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the database URL
-config.set_main_option("sqlalchemy.url", f"sqlite:///{db_config.DB_PATH}")
+config.set_main_option("sqlalchemy.url", db_config.DB_CONNECTION)
 
 # Target metadata for autogenerate
 target_metadata = Base.metadata
