@@ -210,7 +210,7 @@ class ParkingLot(Base):
     status = Column(String, default="free")
     timestamp = Column(DateTime, default=datetime.utcnow)
     parking_id = Column(Integer, ForeignKey("parking.id"), nullable=False)
-    parking = relationship("Parking", back_populates="parking_lots")
+    parking = relationship("Parking", back_populates="parking_lots", cascade="all, delete-orphan")
 
 
 class Booking(Base):
