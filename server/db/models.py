@@ -180,7 +180,7 @@ class Parking(Base):
     available_spots = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    parking_lots = relationship("ParkingLot", back_populates="parking")
+    parking_lots = relationship("ParkingLot", back_populates="parking", cascade="all, delete-orphan")
     bookings = relationship(
         "Booking", back_populates="parking", cascade="all, delete-orphan"
     )  # <-- перевірено, має ForeignKey в Booking
@@ -210,7 +210,7 @@ class ParkingLot(Base):
     status = Column(String, default="free")
     timestamp = Column(DateTime, default=datetime.utcnow)
     parking_id = Column(Integer, ForeignKey("parking.id"), nullable=False)
-    parking = relationship("Parking", back_populates="parking_lots", cascade="all, delete-orphan")
+    parking = relationship("Parking", back_populates="parking_lots")
 
 
 class Booking(Base):
