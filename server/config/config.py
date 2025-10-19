@@ -14,10 +14,7 @@ class Settings(BaseSettings):
 
 
 class DataBaseConfig(Settings):
-    DB_PATH: str = "db/db.sqlite3"
-
-    if not os.path.isabs(DB_PATH):
-        DB_PATH = os.path.join(BASE_DIR, DB_PATH)
+    DB_CONNECTION: str = "db/db.sqlite3"
 
 
 class ManagerConfig(Settings):

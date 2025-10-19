@@ -1,4 +1,4 @@
-import os
+import time
 from auth.validation import check_basic_auth, validate_bearer_token
 from werkzeug.wrappers import Response
 from dotenv import load_dotenv

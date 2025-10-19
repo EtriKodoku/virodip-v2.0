@@ -136,7 +136,7 @@ def patch_user(user_id):
         if "email" in data:
             user.email = data["email"]
         if "phoneNumber" in data:
-            user.phone = data["phone"]
+            user.phone_number = data["phone"]
 
         db.commit()
         return jsonify(user.to_dict()), 200
@@ -208,8 +208,8 @@ def patch_user_car(user_id, car_id):
             car.brand = data["brand"]
         if "model" in data:
             car.model = data["model"]
-        if "numbers" in data:
-            car.license_plate = data["numbers"]
+        if "number" in data:
+            car.license_plate = data["number"]
         if "color" in data:
             car.color = data["color"]
 
