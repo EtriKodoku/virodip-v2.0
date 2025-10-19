@@ -135,8 +135,8 @@ def patch_user(user_id):
             user.name = data["name"]
         if "email" in data:
             user.email = data["email"]
-        if "phone" in data:
-            user.phone_number = data["phone"]
+        if "phoneNumber" in data:
+            user.phone_number = data["phoneNumber"]
 
         db.commit()
         return jsonify(user.to_dict()), 200
