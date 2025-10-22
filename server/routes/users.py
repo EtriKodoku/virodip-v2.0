@@ -31,7 +31,7 @@ def register_user():
             user = User(
                 id=data.get("objectId"),
                 name=data.get("displayName"),
-                email=data.get("email")
+                email=data.get("email"),
             )
             db.add(user)
             db.commit()
@@ -53,12 +53,14 @@ def register_user():
             "jsonBody": {
                 "version": "1.0.0",
                 "action": "Continue",
-                f"extension_{azure_config.AZURE_EXTENSION_APP_ID}_Roles": roles,
+                f"extension_{azure_config.AZURE_EXTENSION_APP_ID}_Role": roles,
             },
         }
     except requests.HTTPError as e:
         g.db.rollback()
-        logger.error(f"HTTP error in user registration: {e}, response: {e.response.json()}")
+        logger.error(
+            f"HTTP error in user registration: {e}, response: {e.response.json()}"
+        )
         return jsonify({"error": str(e), "details": e.response.json()}), 400
     except Exception as e:
         g.db.rollback()
@@ -134,7 +136,7 @@ def patch_user(user_id):
         if "email" in data:
             user.email = data["email"]
         if "phoneNumber" in data:
-            user.phone = data["phone"]
+            user.phone_number = data["phoneNumber"]
 
         db.commit()
         return jsonify(user.to_dict()), 200
@@ -154,7 +156,7 @@ def create_car(user_id):
             return jsonify({"error": "User not found"}), 404
 
         new_car = Car(
-            license_plate=data["numbers"],
+            license_plate=data["number"],
             brand=data["brand"],
             model=data["model"],
             color=data["color"],
@@ -206,8 +208,8 @@ def patch_user_car(user_id, car_id):
             car.brand = data["brand"]
         if "model" in data:
             car.model = data["model"]
-        if "numbers" in data:
-            car.license_plate = data["numbers"]
+        if "number" in data:
+            car.license_plate = data["number"]
         if "color" in data:
             car.color = data["color"]
 

@@ -5,14 +5,12 @@ from flask import Flask, g, request
 from flask_cors import CORS
 from flasgger import Swagger
 
-# from routes.cars import car_bp
-# from routes.roles import role_bp
 from routes.users import user_bp
 from routes.bookings import booking_bp
 from routes.parkings import parking_bp
-# from routes.userroles import userrole_bp
+
 # from routes.transactions import transaction_bp
-# from routes.subscriptions import subscription_bp
+from routes.subscriptions import subscription_bp
 
 from config.logs_config import logger
 from whiskey import SimpleMiddleware
@@ -61,13 +59,17 @@ def create_app():
             f"from {request.remote_addr} | Headers: {dict(request.headers)}"
         )
 
+
     @app.after_request
     def log_response_info(response):
         duration = time.time() - request.start_time
-        logger.info(
-            f"Response: {response.status} for {request.method} {request.path} "
-            f"from {request.remote_addr} | Duration: {duration:.4f}s | Headers: {dict(response.headers)}"
-        )
+        try:
+            logger.info(
+                f"Response: {response.status} for {request.method} {request.path} "
+                f"from {request.remote_addr} | Duration: {duration:.4f}s | Headers: {dict(response.headers)}"
+            )
+        except Exception as e:
+            logger.error(f"Error logging response data: {e}")
         return response
 
     @app.teardown_request
@@ -76,17 +78,11 @@ def create_app():
         if db is not None:
             db.close()
 
-    # --- Blueprints ---
+
+    # Register blueprints for all models
     app.register_blueprint(user_bp, url_prefix="/users")
     app.register_blueprint(booking_bp, url_prefix="/bookings")
     app.register_blueprint(parking_bp, url_prefix="/parkings")
-    # app.register_blueprint(role_bp)
-    # app.register_blueprint(subscription_bp)
-    # app.register_blueprint(car_bp, url_prefix="/cars")
-    # app.register_blueprint(transaction_bp, url_prefix="/transactions")
-    # app.register_blueprint(userrole_bp, url_prefix="/userroles")
-
-    return app
 
 
 if __name__ == "__main__":

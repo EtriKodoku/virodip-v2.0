@@ -86,9 +86,6 @@ def update_parking(parking_id):
     #     return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json()
-    parking_id = data.get("id")
-    if not parking_id:
-        return jsonify({"error": "id is required"}), 400
 
     try:
         parking = g.db.query(Parking).filter_by(id=parking_id).first()
@@ -118,11 +115,6 @@ def update_parking(parking_id):
 def delete_parking(parking_id):
     # if g.user.role != "admin":
     #     return jsonify({"error": "Forbidden"}), 403
-
-    data = request.get_json()
-    parking_id = data.get("id")
-    if not parking_id:
-        return jsonify({"error": "id is required"}), 400
 
     try:
         parking = g.db.query(Parking).filter_by(id=parking_id).first()
