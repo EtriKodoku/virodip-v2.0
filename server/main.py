@@ -18,12 +18,10 @@ from db.models import init_db, SessionLocal
 
 
 def create_app():
-    """Фабрика Flask-додатку."""  # changed: додано docstring
     app = Flask(__name__)
-    CORS(app)  # changed: переніс сюди, щоб усе було в одному місці
-    #app.wsgi_app = SimpleMiddleware(app.wsgi_app)  # changed: тепер у фабриці
+    CORS(app)
+    # app.wsgi_app = SimpleMiddleware(app.wsgi_app)
 
-    # --- Swagger конфігурація ---
     swagger_config = {
         "headers": [],
         "specs": [
@@ -38,7 +36,7 @@ def create_app():
         "swagger_ui": True,
         "specs_route": "/docs/",
     }
-    Swagger(app, config=swagger_config)  # changed: переніс в межі функції
+    Swagger(app, config=swagger_config)
 
     # --- Middleware / hooks ---
     @app.before_request
@@ -83,9 +81,10 @@ def create_app():
     app.register_blueprint(user_bp, url_prefix="/users")
     app.register_blueprint(booking_bp, url_prefix="/bookings")
     app.register_blueprint(parking_bp, url_prefix="/parkings")
+    return app
 
 
 if __name__ == "__main__":
     init_db()
-    app = create_app()  # changed: тепер створюємо додаток через фабрику
+    app = create_app()
     app.run(debug=True, host="127.0.0.1", port=5000)

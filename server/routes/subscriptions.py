@@ -1,23 +1,31 @@
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, g, jsonify, abort
 from playhouse.shortcuts import model_to_dict
-from db.models import db, UserSubscription
+from db.models import UserSubscription
+from config.logs_config import logger
+from cast_types.g_types import DbSessionType
 
 subscription_bp = Blueprint("subscription_bp", __name__)
 
+##TODO FIX IT!!! db.connect is depreciated code. Use db.add and db.commit instead 
+## Add db: DbSessionType = g.db for hintings and proper code style
 
 @subscription_bp.route("/subscriptions", methods=["POST"])
 def create_subscription():
-    data = request.get_json() or {}
+    data = request.get_json()
+    db: DbSessionType = g.db
     if not data.get("plan"):
         return jsonify({"error": "plan is required"}), 400
-    db.connect(reuse_if_open=True)
     try:
         sub = UserSubscription.create(
             plan=data["plan"], active=data.get("active", True)
         )
+        db.add(sub)
+        db.commit()
+
         return jsonify(model_to_dict(sub)), 201
-    finally:
-        db.close()
+    
+    except Exception as e:
+        logger.error(f"Error while creating subscription: {e}")
 
 
 @subscription_bp.route("/subscriptions", methods=["GET"])

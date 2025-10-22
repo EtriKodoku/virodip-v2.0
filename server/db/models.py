@@ -240,8 +240,8 @@ class Booking(Base):
             "carId": self.car_id,
             "parkingId": self.parking_id,
             "status": self.status,
-            "start": self.start,
-            "end": self.end,
+            "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
+            "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
         }
 
 

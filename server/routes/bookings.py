@@ -1,9 +1,6 @@
-import requests
-from flask import Blueprint, request, jsonify, g
-from db.models import User, SessionLocal  # Assuming Session = sessionmaker(bind=engine)
-from config.azure_config import azure_config
-from db.models import Booking, Parking
 from datetime import datetime
+from flask import Blueprint, request, jsonify, g
+from db.models import User, Booking, Parking
 
 booking_bp = Blueprint("booking_bp", __name__)
 
@@ -56,9 +53,8 @@ def create_booking():
             user_id=user_id,
             parking_id=data["parkingId"],
             car_id=data["carId"],
-            # date=datetime.strptime(data["date"], "%Y-%m-%d").date(),
-            start=datetime.strptime(data["start"], "%Y-%m-%d %H:%M"),
-            end=datetime.strptime(data["end"], "%Y-%m-%d %H:%M"),
+            start=datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),
+            end=datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),
             status="active",
         )
 
@@ -96,7 +92,7 @@ def update_booking(booking_id):
             if data["status"] == "cancelled" and old_status != "cancelled":
                 parking = g.db.query(Parking).filter_by(id=booking.parking_id).first()
                 if parking:
-                    parking.capacity += 1
+                    parking.available_spots += 1
 
         if "start" in data:
             booking.start_time = data["start"]
@@ -127,3 +123,13 @@ def delete_booking(booking_id):
     except Exception as e:
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
+
+@booking_bp.route("/test", methods=["POST"])
+def test_booking():
+    
+    data = request.get_json()
+    print(data["start"])
+    start=datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),
+    end=datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),
+    print(type(start))
+    return jsonify({"start": start, "end": end})
