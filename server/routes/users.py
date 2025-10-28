@@ -99,7 +99,16 @@ def get_users():
     db: DbSessionType = cast(DbSessionType, g.db)
     try:
         users = db.query(User).all()
-        return jsonify([u.to_dict() for u in users]), 200
+        user_list = []
+
+        for user in users:
+            roles = [role.name for role in user.roles] if hasattr(user, "roles") else get_roles(user.email)
+            user_data = user.to_dict()
+            user_data["roles"] = roles
+            user_list.append(user_data)
+
+        return jsonify(user_list), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -113,7 +122,13 @@ def get_user(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        return jsonify(user.to_dict()), 200
+        
+        roles = [role.name for role in user.roles] if hasattr(user, "roles") else get_roles(user.email)
+
+        user_data = user.to_dict()
+        user_data["roles"] = roles
+
+        return jsonify(user_data), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
