@@ -39,7 +39,7 @@ jobs:
             # Update dependencies
             if [ -f "server/requirements.txt" ]; then
               source server/.venv/bin/activate
-              pip install -r requirements.txt
+              pip install -r server/requirements.txt
               deactivate
             fi
 
