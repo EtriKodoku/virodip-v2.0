@@ -1,0 +1,121 @@
+# Database Migrations
+
+This project uses **Alembic** for handling database migrations with **SQLite**.
+All Alembic configuration files are stored inside the `db/` folder.
+
+---
+
+## Prerequisites
+
+1. Install dependencies:
+
+   ```bash
+   pip install alembic sqlalchemy
+   ```
+2. Make sure your database path is correctly set in `db/alembic.ini` or inside `env.py`.
+
+---
+
+## Creating a New Migration
+
+Whenever you modify your SQLAlchemy models, generate a new migration file:
+
+```bash
+alembic -c db/alembic.ini revision --autogenerate -m "init schema"
+```
+
+* Replace `"init schema"` with a descriptive message, e.g. `"add role description"`.
+
+---
+
+## Applying Migrations
+
+To upgrade the database to the latest revision, run:
+
+```bash
+alembic -c db/alembic.ini upgrade head
+```
+
+This will apply all unapplied migrations to your SQLite database.
+
+---
+
+## Checking Migration Status
+
+* Show the current migration version applied to the DB:
+
+  ```bash
+  alembic -c db/alembic.ini current
+  ```
+
+* Show the latest migration(s) available:
+
+  ```bash
+  alembic -c db/alembic.ini heads
+  ```
+
+## Workflow Example
+
+```bash
+# Make changes to your models
+alembic -c db/alembic.ini revision --autogenerate -m "add users table"
+alembic -c db/alembic.ini upgrade head
+```
+
+---
+# Revert Database Migrations
+
+## Downgrade one step
+
+```bash
+alembic -c db/alembic.ini downgrade -1
+```
+
+* `-1` means **one migration backward** from the current state.
+* Use this if you just applied a migration and want to undo it.
+
+---
+
+## Downgrade to a specific revision
+
+First, check the migration history:
+
+```bash
+alembic -c db/alembic.ini history
+```
+
+Output example:
+
+```
+b1a2c3d4e5f6 -> init schema
+c7d8e9f0a1b2 -> add role description
+```
+
+Then downgrade to a specific revision:
+
+```bash
+alembic -c db/alembic.ini downgrade b1a2c3d4e5f6
+```
+
+This will revert the DB to the state after that revision.
+
+---
+
+## Downgrade to base (empty DB)
+
+```bash
+alembic -c db/alembic.ini downgrade base
+```
+
+* Reverts **all migrations**, effectively resetting your SQLite DB schema.
+* Useful if you want to start fresh.
+
+---
+
+## Notes / Tips
+
+* Downgrades **only work if your migration scripts include `downgrade()` functions**.
+* With `--autogenerate`, Alembic usually writes both `upgrade()` and `downgrade()`.
+* For SQLite, some schema operations (like dropping a column) are **non-transactional**, so Alembic may warn you.
+
+---
