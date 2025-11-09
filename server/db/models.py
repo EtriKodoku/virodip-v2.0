@@ -249,6 +249,7 @@ class Booking(Base):
             "id": self.id,
             "userId": self.user_id,
             "carId": self.car_id,
+            "parkingId": self.parking_id,
             "parkingObj": SessionLocal.query(Parking).filter_by(id=self.parking_id).first().to_dict(),
             "status": self.status,
             "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
