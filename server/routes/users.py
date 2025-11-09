@@ -269,7 +269,7 @@ def get_user_bookings(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        bookings = [booking.to_dict() for booking in user.bookings]
+        bookings = [booking.to_dict_extended() for booking in user.bookings]
         return jsonify({"bookings": bookings}), 200
 
     except Exception as e:
