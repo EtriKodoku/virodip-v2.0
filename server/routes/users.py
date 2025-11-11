@@ -7,8 +7,7 @@ from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
 from utils.roles import get_roles, register_roles
-from utils.blob_service import delete_blob
-from utils.blob_service import generate_sas_url
+from utils.blob_service import delete_blob, generate_sas_url
 
 from typing import cast
 from cast_types.g_types import DbSessionType
