@@ -1,25 +1,11 @@
 from datetime import datetime, timedelta
 from typing import Dict
 from urllib.parse import urlparse
-
-import importlib.util
-
-
-# Dynamically import azure.storage.blob if available to satisfy linters when package missing
-if importlib.util.find_spec("azure.storage.blob") is not None:
-    from azure.storage.blob import (
-        BlobServiceClient,
-        generate_blob_sas,
-        BlobSasPermissions,
-    )
-
-    _HAS_AZURE = True
-else:
-    BlobServiceClient = None
-    generate_blob_sas = None
-    BlobSasPermissions = None
-    _HAS_AZURE = False
-
+from azure.storage.blob import (
+    BlobServiceClient,
+    generate_blob_sas,
+    BlobSasPermissions,
+)
 from config.azure_config import azure_storage_config
 
 
@@ -27,17 +13,15 @@ from config.azure_config import azure_storage_config
 _ACCOUNT = azure_storage_config.AZURE_STORAGE_ACCOUNT_NAME
 _KEY = azure_storage_config.AZURE_STORAGE_ACCOUNT_KEY
 
-if _HAS_AZURE and _ACCOUNT and _KEY:
-    _BLOB_SERVICE = BlobServiceClient(
-        account_url=f"https://{_ACCOUNT}.blob.core.windows.net",
-        credential=_KEY,
-    )
-else:
-    _BLOB_SERVICE = None
+
+_BLOB_SERVICE = BlobServiceClient(
+    account_url=f"https://{_ACCOUNT}.blob.core.windows.net",
+    credential=_KEY,
+)
 
 
 def _parse_permissions(p: str):
-    if not _HAS_AZURE or BlobSasPermissions is None:
+    if not BlobSasPermissions is None:
         raise RuntimeError(
             "azure-storage-blob is not installed; cannot parse permissions"
         )
@@ -64,10 +48,6 @@ def generate_sas_url(
     permissions is a string like 'r', 'w', 'rw', 'cw' (create+write),
     mapped to BlobSasPermissions.
     """
-    if not _HAS_AZURE or _BLOB_SERVICE is None:
-        raise RuntimeError(
-            "Azure BlobServiceClient is not configured or azure-storage-blob is not installed"
-        )
 
     perms = _parse_permissions(permissions)
 
@@ -92,10 +72,6 @@ def generate_sas_url(
 
 def delete_blob(container_name: str, blob_name: str) -> bool:
     """Delete blob if exists. Returns True if deleted or not present."""
-    if not _HAS_AZURE or _BLOB_SERVICE is None:
-        raise RuntimeError(
-            "Azure BlobServiceClient is not configured or azure-storage-blob is not installed"
-        )
 
     # strip query if user passed full URL
     try:

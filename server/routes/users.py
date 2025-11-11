@@ -7,9 +7,11 @@ from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
 from utils.roles import get_roles, register_roles
+from utils.blob_service import delete_blob
 
 from typing import cast
 from cast_types.g_types import DbSessionType
+
 
 #   Add this line to every endpoint for enabling hints
 #   db: DbSessionType = cast(DbSessionType, g.db)
@@ -347,10 +349,6 @@ def update_avatar():
     # read userId from JSON body, fallback to header or query
     data = request.get_json(silent=True) or {}
     user_id = data.get("userId") if data else None
-    # if not user_id:
-    #     user_id = request.headers.get("X-User-Id")
-    # if not user_id:
-    #     user_id = request.args.get("userId") or request.args.get("user_id")
 
     if not user_id:
         return (
@@ -361,15 +359,6 @@ def update_avatar():
     file_url = data.get("fileUrl")
     if not file_url:
         return jsonify({"error": "fileUrl is required"}), 400
-
-    try:
-        from utils.blob_service import delete_blob
-    except Exception:
-        logger.exception("Failed to import blob_service")
-        return (
-            jsonify({"error": "Server misconfiguration: blob service not available"}),
-            500,
-        )
 
     try:
         user = db.query(User).filter_by(id=user_id).first()
@@ -406,8 +395,6 @@ def delete_avatar():
     user_id = data.get("userId") if data else None
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
-
-    from utils.blob_service import delete_blob
 
     try:
         user = db.query(User).filter_by(id=user_id).first()
