@@ -8,6 +8,7 @@ from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
 from utils.roles import get_roles, register_roles
 from utils.blob_service import delete_blob
+from utils.blob_service import generate_sas_url
 
 from typing import cast
 from cast_types.g_types import DbSessionType
@@ -314,14 +315,6 @@ def get_avatar_upload_url():
     if not user_id:
         return jsonify({"error": "Unauthorized: userId required"}), 401
 
-    try:
-        from utils.blob_service import generate_sas_url
-    except Exception as e:
-        logger.exception("Failed to import blob_service")
-        return (
-            jsonify({"error": "Server misconfiguration: blob service not available"}),
-            500,
-        )
 
     blob_name = f"{user_id}-{int(time.time())}.jpg"
     try:
