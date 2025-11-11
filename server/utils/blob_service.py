@@ -4,18 +4,18 @@ from urllib.parse import urlparse
 
 import importlib.util
 
+
 # Dynamically import azure.storage.blob if available to satisfy linters when package missing
 if importlib.util.find_spec("azure.storage.blob") is not None:
     from azure.storage.blob import (
         BlobServiceClient,
-        BlobClient,
         generate_blob_sas,
         BlobSasPermissions,
     )
+
     _HAS_AZURE = True
 else:
     BlobServiceClient = None
-    BlobClient = None
     generate_blob_sas = None
     BlobSasPermissions = None
     _HAS_AZURE = False
@@ -38,7 +38,9 @@ else:
 
 def _parse_permissions(p: str):
     if not _HAS_AZURE or BlobSasPermissions is None:
-        raise RuntimeError("azure-storage-blob is not installed; cannot parse permissions")
+        raise RuntimeError(
+            "azure-storage-blob is not installed; cannot parse permissions"
+        )
     perms = BlobSasPermissions()
     if "r" in p:
         perms.read = True
@@ -63,7 +65,9 @@ def generate_sas_url(
     mapped to BlobSasPermissions.
     """
     if not _HAS_AZURE or _BLOB_SERVICE is None:
-        raise RuntimeError("Azure BlobServiceClient is not configured or azure-storage-blob is not installed")
+        raise RuntimeError(
+            "Azure BlobServiceClient is not configured or azure-storage-blob is not installed"
+        )
 
     perms = _parse_permissions(permissions)
 
@@ -78,7 +82,9 @@ def generate_sas_url(
         protocol="https",
     )
 
-    blob_client = _BLOB_SERVICE.get_blob_client(container=container_name, blob=blob_name)
+    blob_client = _BLOB_SERVICE.get_blob_client(
+        container=container_name, blob=blob_name
+    )
     upload_url = f"{blob_client.url}?{sas_token}"
     file_url = blob_client.url
     return {"uploadUrl": upload_url, "fileUrl": file_url}
@@ -87,7 +93,9 @@ def generate_sas_url(
 def delete_blob(container_name: str, blob_name: str) -> bool:
     """Delete blob if exists. Returns True if deleted or not present."""
     if not _HAS_AZURE or _BLOB_SERVICE is None:
-        raise RuntimeError("Azure BlobServiceClient is not configured or azure-storage-blob is not installed")
+        raise RuntimeError(
+            "Azure BlobServiceClient is not configured or azure-storage-blob is not installed"
+        )
 
     # strip query if user passed full URL
     try:
@@ -98,10 +106,11 @@ def delete_blob(container_name: str, blob_name: str) -> bool:
     except Exception:
         pass
 
-    blob_client = _BLOB_SERVICE.get_blob_client(container=container_name, blob=blob_name)
+    blob_client = _BLOB_SERVICE.get_blob_client(
+        container=container_name, blob=blob_name
+    )
     try:
         blob_client.delete_blob()
     except Exception:
-        # ignore not found / permission errors here; caller can log if desired
         return False
     return True

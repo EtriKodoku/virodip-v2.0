@@ -5,8 +5,9 @@ from cast_types.g_types import DbSessionType
 
 subscription_bp = Blueprint("subscription_bp", __name__)
 
-##TODO FIX IT!!! db.connect is depreciated code. Use db.add and db.commit instead 
+##TODO FIX IT!!! db.connect is depreciated code. Use db.add and db.commit instead
 ## Add db: DbSessionType = g.db for hintings and proper code style
+
 
 @subscription_bp.route("/subscriptions", methods=["POST"])
 def create_subscription():
@@ -22,7 +23,7 @@ def create_subscription():
         db.commit()
 
         return jsonify((sub)), 201
-    
+
     except Exception as e:
         logger.error(f"Error while creating subscription: {e}")
 

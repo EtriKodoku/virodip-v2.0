@@ -180,7 +180,9 @@ class Parking(Base):
     available_spots = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    parking_lots = relationship("ParkingLot", back_populates="parking", cascade="all, delete-orphan")
+    parking_lots = relationship(
+        "ParkingLot", back_populates="parking", cascade="all, delete-orphan"
+    )
     bookings = relationship(
         "Booking", back_populates="parking", cascade="all, delete-orphan"
     )  # <-- перевірено, має ForeignKey в Booking
@@ -250,7 +252,10 @@ class Booking(Base):
             "userId": self.user_id,
             "carId": self.car_id,
             "parkingId": self.parking_id,
-            "parkingObj": SessionLocal.query(Parking).filter_by(id=self.parking_id).first().to_dict(),
+            "parkingObj": SessionLocal.query(Parking)
+            .filter_by(id=self.parking_id)
+            .first()
+            .to_dict(),
             "status": self.status,
             "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
             "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),

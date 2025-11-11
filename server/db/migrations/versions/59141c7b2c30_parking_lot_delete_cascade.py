@@ -1,10 +1,11 @@
 """parking_lot delete cascade
 
 Revision ID: 59141c7b2c30
-Revises: 
+Revises:
 Create Date: 2025-10-19 22:47:31.922502
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -12,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '59141c7b2c30'
+revision: str = "59141c7b2c30"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

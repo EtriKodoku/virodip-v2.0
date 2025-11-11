@@ -13,9 +13,7 @@ def get_user_bookings(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        bookings = [
-            booking.to_dict_extended() for booking in user.bookings
-        ]
+        bookings = [booking.to_dict_extended() for booking in user.bookings]
         return jsonify({"booking": bookings}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -124,12 +122,13 @@ def delete_booking(booking_id):
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
 
+
 @booking_bp.route("/test", methods=["POST"])
 def test_booking():
-    
+
     data = request.get_json()
     print(data["start"])
-    start=datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),
-    end=datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),
+    start = (datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),)
+    end = (datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),)
     print(type(start))
     return jsonify({"start": start, "end": end})
