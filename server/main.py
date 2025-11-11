@@ -57,7 +57,6 @@ def create_app():
             f"from {request.remote_addr} | Headers: {dict(request.headers)}"
         )
 
-
     @app.after_request
     def log_response_info(response):
         duration = time.time() - request.start_time
@@ -75,7 +74,6 @@ def create_app():
         db = g.pop("db", None)
         if db is not None:
             db.close()
-
 
     # Register blueprints for all models
     app.register_blueprint(user_bp, url_prefix="/users")
