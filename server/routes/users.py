@@ -102,7 +102,11 @@ def get_users():
         user_list = []
 
         for user in users:
-            roles = [role.name for role in user.roles] if hasattr(user, "roles") else get_roles(user.email)
+            roles = (
+                [role.name for role in user.roles]
+                if hasattr(user, "roles")
+                else get_roles(user.email)
+            )
             user_data = user.to_dict()
             user_data["roles"] = roles
             user_list.append(user_data)
@@ -122,8 +126,11 @@ def get_user(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        
-        roles = [role.name for role in user.roles] if hasattr(user, "roles") else get_roles(user.email)
+        roles = (
+            [role.name for role in user.roles]
+            if hasattr(user, "roles")
+            else get_roles(user.email)
+        )
 
         user_data = user.to_dict()
         user_data["roles"] = roles

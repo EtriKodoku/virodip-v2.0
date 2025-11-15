@@ -180,10 +180,13 @@ class Parking(Base):
     available_spots = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    parking_lots = relationship("ParkingLot", back_populates="parking", cascade="all, delete-orphan")
+    parking_lots = relationship(
+        "ParkingLot", back_populates="parking", cascade="all, delete-orphan"
+    )
     bookings = relationship(
         "Booking", back_populates="parking", cascade="all, delete-orphan"
-    )  # <-- перевірено, має ForeignKey в Booking
+    )
+    devices = relationship("Device", back_populates="parking")
 
     def to_dict(self):
         return {
@@ -242,6 +245,47 @@ class Booking(Base):
             "status": self.status,
             "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
             "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
+        }
+
+
+class Device(Base):
+    __tablename__ = "devices"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    serial_number = Column(String(100), unique=True, nullable=False)
+    token = Column(String(200), nullable=True)
+    status = Column(String(50), default="pending")  # pending, active, revoked
+    issued = Column(Boolean, default=False)
+    parking_id = Column(Integer, ForeignKey("parking.id"), nullable=True)
+    cert_serial = Column(String(100), nullable=True)
+    issued_at = Column(DateTime, nullable=True)
+    renewed_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+    parking = relationship("Parking", back_populates="devices")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "serial_number": self.serial_number,
+            "token": self.token,
+            "status": self.status,
+            "issued": self.issued,
+            "parking_id": self.parking_id,
+            "cert_serial": self.cert_serial,
+            "issued_at": (
+                datetime.strftime(self.issued_at, "%Y-%m-%dT%H:%M")
+                if self.issued_at
+                else None
+            ),
+            "renewed_at": (
+                datetime.strftime(self.renewed_at, "%Y-%m-%dT%H:%M")
+                if self.renewed_at
+                else None
+            ),
+            "revoked_at": (
+                datetime.strftime(self.revoked_at, "%Y-%m-%dT%H:%M")
+                if self.revoked_at
+                else None
+            ),
         }
 
 

@@ -124,12 +124,13 @@ def delete_booking(booking_id):
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
 
+
 @booking_bp.route("/test", methods=["POST"])
 def test_booking():
-    
+
     data = request.get_json()
     print(data["start"])
-    start=datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),
-    end=datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),
+    start = (datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),)
+    end = (datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),)
     print(type(start))
     return jsonify({"start": start, "end": end})
