@@ -21,7 +21,7 @@ _BLOB_SERVICE = BlobServiceClient(
 
 
 def _parse_permissions(p: str):
-    if not BlobSasPermissions is None:
+    if BlobSasPermissions is None:
         raise RuntimeError(
             "azure-storage-blob is not installed; cannot parse permissions"
         )
