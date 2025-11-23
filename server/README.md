@@ -1,4 +1,4 @@
-# Server (Flask + Peewee)
+# Server (Flask + SQLAlchemy)
 
 Quick setup and run instructions (Windows PowerShell):
 
@@ -21,12 +21,10 @@ pip install -r requirements.txt
 python -m main
 ```
 
-The API endpoints available:
+The API endpoint domains available:
 
-- POST /users - create user
-- GET /users - list users
-- GET /users/<id> - get user
-- PUT /users/<id> - update user
-- DELETE /users/<id> - delete user
-
+- users - crud users, roles and cars
+- bookings - crud bookings
+- parkings - crud parkings
+- 
 The SQLite DB file `app.db` will be created in folder "db" if not changed in .env file.`

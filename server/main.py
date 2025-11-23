@@ -8,6 +8,8 @@ from flasgger import Swagger
 from routes.users import user_bp
 from routes.bookings import booking_bp
 from routes.parkings import parking_bp
+from routes.devices import device_bp
+from routes.certificates import certificates_bp
 
 # from routes.transactions import transaction_bp
 from routes.subscriptions import subscription_bp
@@ -79,6 +81,9 @@ def create_app():
     app.register_blueprint(user_bp, url_prefix="/users")
     app.register_blueprint(booking_bp, url_prefix="/bookings")
     app.register_blueprint(parking_bp, url_prefix="/parkings")
+    app.register_blueprint(certificates_bp, url_prefix="/ca")
+    app.register_blueprint(device_bp, url_prefix="/devices")
+
     return app
 
 

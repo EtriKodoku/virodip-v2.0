@@ -1,5 +1,4 @@
 from flask import Blueprint, request, g, jsonify, abort
-from playhouse.shortcuts import model_to_dict
 from db.models import UserSubscription
 from config.logs_config import logger
 from cast_types.g_types import DbSessionType
@@ -23,7 +22,7 @@ def create_subscription():
         db.add(sub)
         db.commit()
 
-        return jsonify(model_to_dict(sub)), 201
+        return jsonify((sub)), 201
 
     except Exception as e:
         logger.error(f"Error while creating subscription: {e}")
@@ -33,7 +32,7 @@ def create_subscription():
 def list_subscriptions():
     db.connect(reuse_if_open=True)
     try:
-        subs = [model_to_dict(s) for s in UserSubscription.select()]
+        subs = [(s) for s in UserSubscription.select()]
         return jsonify(subs)
     finally:
         db.close()
@@ -47,7 +46,7 @@ def get_subscription(sub_id):
             sub = UserSubscription.get(UserSubscription.id == sub_id)
         except UserSubscription.DoesNotExist:
             abort(404)
-        return jsonify(model_to_dict(sub))
+        return jsonify((sub))
     finally:
         db.close()
 
@@ -64,7 +63,7 @@ def update_subscription(sub_id):
         sub.plan = data.get("plan", sub.plan)
         sub.active = data.get("active", sub.active)
         sub.save()
-        return jsonify(model_to_dict(sub))
+        return jsonify((sub))
     finally:
         db.close()
 
