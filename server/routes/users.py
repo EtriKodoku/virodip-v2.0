@@ -250,13 +250,13 @@ def get_user_cars(user_id):
 
         # Apply pagination
         cars = (
-            query.order_by(User.id)
+            query.order_by(Car.id)
                 .offset(offset)
                 .limit(per_page)
                 .all()
         )
         result = {
-            "cars": [car for car in cars],
+            "cars": [car.to_dict() for car in cars],
             "total": total,
             "page": page,
             "pages": (total + per_page - 1) // per_page,
