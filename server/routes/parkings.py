@@ -1,9 +1,14 @@
 from flask import Blueprint, request, jsonify, g
 from db.models import Parking, ParkingLot
 from datetime import datetime
-
+from typing import cast
+from cast_types.g_types import DbSessionType
 
 parking_bp = Blueprint("parking_bp", __name__)
+
+
+#   Add this line to every endpoint for enabling hints
+#   db: DbSessionType = cast(DbSessionType, g.db)
 
 
 ## Get all parkings
@@ -124,3 +129,19 @@ def delete_parking(parking_id):
     except Exception as e:
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# PATCH parking lot
+@parking_bp.route("<string:parking_id>/lot/<int:lot_index>", methods=["PATCH"])
+def update_parking_lot_status(parking_id, lot_index):
+    options = ("taken", "free")
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    data = request.get_json()
+    parking_lots: list[ParkingLot] = db.query(ParkingLot).filter_by(parking_id=parking_id)
+    if data["status"] in options:
+        parking_lots[lot_index].status = data["status"]
+        db.commit()
+        return jsonify({"message": "Status successfully updated"}), 200
+    else:
+        return jsonify({"error": "Wrong parking lot status"}), 400
