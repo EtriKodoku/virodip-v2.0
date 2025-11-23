@@ -247,6 +247,21 @@ class Booking(Base):
             "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
         }
 
+    def to_dict_extended(self):
+        return {
+            "id": self.id,
+            "userId": self.user_id,
+            "carId": self.car_id,
+            "parkingId": self.parking_id,
+            "parkingObj": SessionLocal.query(Parking)
+            .filter_by(id=self.parking_id)
+            .first()
+            .to_dict(),
+            "status": self.status,
+            "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
+            "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
+        }
+
 
 class Device(Base):
     __tablename__ = "devices"

@@ -13,9 +13,7 @@ def get_user_bookings(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        bookings = [
-            booking.to_dict() for booking in user.bookings
-        ]  # Assuming a to_dict method exists
+        bookings = [booking.to_dict_extended() for booking in user.bookings]
         return jsonify({"booking": bookings}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -26,7 +24,7 @@ def get_user_bookings(user_id):
 def get_all_bookings():
     try:
         bookings = g.db.query(Booking).all()
-        return jsonify([booking.to_dict() for booking in bookings]), 200
+        return jsonify([booking.to_dict_extended() for booking in bookings]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
