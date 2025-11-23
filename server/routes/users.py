@@ -2,7 +2,7 @@ import requests
 import time
 from flask import Blueprint, request, jsonify, g
 
-from db.models import User, Car
+from db.models import User, Car, Role, UserRole
 from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
@@ -21,7 +21,7 @@ user_bp = Blueprint("user_bp", __name__)
 
 
 ## Register user
-@user_bp.route("/register", methods=["POST"])
+@user_bp.route("/register", methods=["POST"], strict_slashes=False)
 def register_user():
     data = request.get_json()
     db: DbSessionType = g.db
@@ -97,11 +97,41 @@ def delete_user(user_id):
 
 
 ## Get all users
-@user_bp.route("/", methods=["GET"])
+@user_bp.route("/", methods=["GET"], strict_slashes=False)
 def get_users():
     db: DbSessionType = cast(DbSessionType, g.db)
     try:
-        users = db.query(User).all()
+        name = request.args.get("name")
+        role = request.args.get("role")
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+
+        # Base query
+        query = db.query(User)
+
+        # Apply filters
+        if name is not None:
+            query = query.filter(User.name == name)
+
+        if role is not None:
+            query = query.join(UserRole, User.id == UserRole.user_id)\
+                .join(Role, Role.id == UserRole.role_id)\
+                .filter(Role.name == role)
+
+        # Count after filters
+        total = query.count()
+
+        # Pagination math
+        offset = (page - 1) * per_page
+
+        # Apply pagination
+        users = (
+            query.order_by(User.id)
+                .offset(offset)
+                .limit(per_page)
+                .all()
+        )
+
         user_list = []
 
         for user in users:
@@ -114,14 +144,25 @@ def get_users():
             user_data["roles"] = roles
             user_list.append(user_data)
 
-        return jsonify(user_list), 200
+        result = {
+            "users": user_list,
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+
+        return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 ## Get user by ID
-@user_bp.route("/<string:user_id>", methods=["GET"])
+@user_bp.route("/<string:user_id>", methods=["GET"], strict_slashes=False)
 def get_user(user_id):
     db: DbSessionType = cast(DbSessionType, g.db)
     try:
@@ -201,12 +242,33 @@ def create_car(user_id):
 def get_user_cars(user_id):
     db: DbSessionType = cast(DbSessionType, g.db)
     try:
-        user = db.query(User).filter_by(id=user_id).first()
-        if not user:
-            return jsonify({"error": "User not found"}), 404
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        query = db.query(Car).filter_by(owner_id=user_id)
+        # Count after filters
+        total = query.count()
 
-        cars = [car.to_dict() for car in user.cars]
-        return jsonify({"cars": cars}), 200
+        # Pagination math
+        offset = (page - 1) * per_page
+
+        # Apply pagination
+        cars = (
+            query.order_by(User.id)
+                .offset(offset)
+                .limit(per_page)
+                .all()
+        )
+        result = {
+            "cars": [car for car in cars],
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+        return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
