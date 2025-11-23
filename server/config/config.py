@@ -21,5 +21,12 @@ class ManagerConfig(Settings):
     OWNER_EMAIL: str = "jhon.doe@example.com"
 
 
+class CAConfig(Settings):
+    CA_KEY_FILE: str = "ca.key"
+    CA_CERT_FILE: str = "ca.crt"
+    CRL_FILE: str = "crl.pem"
+
+
 db_config = DataBaseConfig()
 manager_config = ManagerConfig()
+ca_config = CAConfig()
