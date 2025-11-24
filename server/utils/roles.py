@@ -50,3 +50,11 @@ def register_roles(user, roles):
             continue
 
     return "Success"  ## TODO Change to proper logging
+
+
+def has_role(role: str):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
