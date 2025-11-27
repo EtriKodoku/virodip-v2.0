@@ -43,7 +43,7 @@ def get_user_bookings(user_id):
         )
 
         result = {
-            "parkings": [booking.to_dict_extended() for booking in bookings],
+            "bookings": [booking.to_dict_extended() for booking in bookings],
             "total": total,
             "page": page,
             "pages": (total + per_page - 1) // per_page,
