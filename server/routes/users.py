@@ -1,4 +1,5 @@
 import requests
+import time
 from flask import Blueprint, request, jsonify, g
 
 from db.models import User, Car
@@ -6,9 +7,11 @@ from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
 from utils.roles import get_roles, register_roles
+from utils.blob_service import delete_blob, generate_sas_url
 
 from typing import cast
 from cast_types.g_types import DbSessionType
+
 
 #   Add this line to every endpoint for enabling hints
 #   db: DbSessionType = cast(DbSessionType, g.db)
@@ -276,7 +279,7 @@ def get_user_bookings(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        bookings = [booking.to_dict() for booking in user.bookings]
+        bookings = [booking.to_dict_extended() for booking in user.bookings]
         return jsonify({"bookings": bookings}), 200
 
     except Exception as e:
@@ -298,3 +301,115 @@ def get_user_transactions(user_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# --- Avatar endpoints ---
+@user_bp.route("/avatar/upload-url", methods=["POST"])
+def get_avatar_upload_url():
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    data = request.get_json(silent=True)
+    user_id = data.get("userId") if data else None
+
+    if not user_id:
+        return jsonify({"error": "Unauthorized: userId required"}), 401
+
+
+    blob_name = f"{user_id}-{int(time.time())}.jpg"
+    try:
+        sas = generate_sas_url(
+            container_name="avatars",
+            blob_name=blob_name,
+            permissions="cw",
+            expires_in_minutes=5,
+        )
+
+        return jsonify({"fileUrl": sas["fileUrl"], "uploadUrl": sas["uploadUrl"]}), 200
+
+    except RuntimeError as e:
+        logger.exception("Azure SDK not available or misconfigured")
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        logger.exception("Failed to generate SAS URL")
+        return jsonify({"error": "Failed to generate upload url"}), 500
+
+
+@user_bp.route("/avatar", methods=["PATCH"])
+def update_avatar():
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    # read userId from JSON body, fallback to header or query
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("userId") if data else None
+
+    if not user_id:
+        return (
+            jsonify({"error": "Unauthorized: userId required (body/header/query)"}),
+            401,
+        )
+
+    file_url = data.get("fileUrl")
+    if not file_url:
+        return jsonify({"error": "fileUrl is required"}), 400
+
+    try:
+        user = db.query(User).filter_by(id=user_id).first()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # delete previous avatar if present
+        if user.avatar_url is not None:
+            try:
+                old_blob = user.avatar_url.split("?")[0].split("/")[-1]
+                delete_blob("avatars", old_blob)
+            except Exception:
+                logger.exception("Failed deleting old avatar")
+
+        # update and persist
+        user.avatar_url = file_url
+        db.add(user)
+        db.commit()
+
+        # Return the minimal response frontend expects
+        return jsonify({"avatarUrl": user.avatar_url}), 201
+
+    except Exception:
+        logger.exception("Failed to update avatar")
+        db.rollback()
+        return jsonify({"error": "Failed to update avatar"}), 500
+
+
+@user_bp.route("/avatar", methods=["DELETE"])
+def delete_avatar():
+    db: DbSessionType = cast(DbSessionType, g.db)
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("userId") if data else None
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        user = db.query(User).filter_by(id=user_id).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        if user.avatar_url:
+            blob_name = user.avatar_url.split("?")[0].split("/")[-1]
+            try:
+                delete_blob("avatars", blob_name)
+            except Exception:
+                logger.exception("Failed deleting avatar")
+
+        user.avatar_url = None
+        db.add(user)
+        db.commit()
+
+        return (
+            jsonify(
+                {"status": 204, "jsonBody": {"version": "1.0.0", "action": "Continue"}}
+            ),
+            204,
+        )
+    except Exception:
+        logger.exception("Failed to delete avatar")
+        db.rollback()
+        return jsonify({"error": "Failed to delete avatar"}), 500
