@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 from config.config import db_config
 
-engine = create_engine(db_config.DB_CONNECTION, echo=False, future=True)
+engine = create_engine(db_config.DB_CONNECTION, echo=False, future=True, pool_pre_ping=True)
 SessionLocal = scoped_session(
     sessionmaker(bind=engine, autoflush=False, autocommit=False)
 )
@@ -52,7 +52,7 @@ class User(Base):
     __tablename__ = "user"
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     avatar_url = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

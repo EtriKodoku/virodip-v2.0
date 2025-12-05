@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import cast
 from cast_types.g_types import DbSessionType
 
+
 parking_bp = Blueprint("parking_bp", __name__)
 
 
@@ -14,9 +15,28 @@ parking_bp = Blueprint("parking_bp", __name__)
 ## Get all parkings
 @parking_bp.route("/", methods=["GET"])
 def get_parkings():
-    try:
-        parkings = g.db.query(Parking).all()
-        return jsonify([parking.to_dict() for parking in parkings]), 200
+    db: DbSessionType = cast(DbSessionType, g.db)
+    try:        
+        name = request.args.get("name")
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        query = db.query(Parking)
+        if name is not None:
+            query.filter(Parking.name == name)
+        offset = (page - 1) * per_page
+        total = query.count()
+        parkings = query.offset(offset).limit(per_page).all()
+        result = {
+            "parkings": [parking.to_dict() for parking in parkings],
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
