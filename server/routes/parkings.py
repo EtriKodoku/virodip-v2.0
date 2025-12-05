@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, g
-from db.models import Parking, ParkingLot
+from db.models import Parking, ParkingLot, Booking, Car
 from datetime import datetime
 from typing import cast
 from cast_types.g_types import DbSessionType
@@ -145,3 +145,29 @@ def update_parking_lot_status(parking_id, lot_index):
         return jsonify({"message": "Status successfully updated"}), 200
     else:
         return jsonify({"error": "Wrong parking lot status"}), 400
+
+
+@parking_bp.route("<string:parking_id>/entering", methods=["POST"])
+def car_entering(parking_id):
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    data = request.get_json(silent=True) or {}
+    license_plate = data.get("license_plate")
+    auto = data.get("auto", True)
+
+    if auto:
+        booking = (
+            db.query(Booking)
+            .join(Booking.car)
+            .filter(Booking.parking_id == parking_id)
+            .filter(Car.license_plate == license_plate)
+            .first()
+        )
+
+        if not booking:
+            return (
+                jsonify({"error": "No active booking found for this license plate"}),
+                404,
+            )
+
+        return jsonify({"message": "This car is booked", "status": "open"}), 200
