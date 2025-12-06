@@ -124,3 +124,51 @@ def delete_parking(parking_id):
     except Exception as e:
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# PATCH parking lot
+@parking_bp.route("<string:parking_id>/lot/<int:lot_index>", methods=["PATCH"])
+def update_parking_lot_status(parking_id, lot_index):
+    options = ("taken", "free")
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    data = request.get_json()
+
+    # God, excuse me for this awfuł shit hard coding
+    # May me never do this level of logging for another pure soul
+    with open("parking_lot_updating.log", 'a') as file:
+        file.writelines(f"\n{datetime.now()} | {parking_id}:{lot_index} | {request.data.decode()}")
+
+    parking_lots: list[ParkingLot] = db.query(ParkingLot).filter_by(parking_id=parking_id)
+    if data["status"] in options:
+        parking_lots[lot_index].status = data["status"]
+        db.commit()
+        return jsonify({"message": "Status successfully updated"}), 200
+    else:
+        return jsonify({"error": "Wrong parking lot status"}), 400
+
+
+@parking_bp.route("<string:parking_id>/entering", methods=["POST"])
+def car_entering(parking_id):
+    db: DbSessionType = cast(DbSessionType, g.db)
+
+    data = request.get_json(silent=True) or {}
+    license_plate = data.get("license_plate")
+    auto = data.get("auto", True)
+
+    if auto:
+        booking = (
+            db.query(Booking)
+            .join(Booking.car)
+            .filter(Booking.parking_id == parking_id)
+            .filter(Car.license_plate == license_plate)
+            .first()
+        )
+
+        if not booking:
+            return (
+                jsonify({"error": "No active booking found for this license plate"}),
+                404,
+            )
+
+        return jsonify({"message": "This car is booked", "status": "open"}), 200

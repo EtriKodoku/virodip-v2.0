@@ -50,3 +50,46 @@ def register_roles(user, roles):
             continue
 
     return "Success"  ## TODO Change to proper logging
+
+
+def can_assign_roles(current_user_roles: list, roles_to_assign: list) -> tuple[bool, str]:
+    """
+    Check if the current user can assign the given roles to another user.
+    
+    Rules:
+    - Owner role cannot be assigned by anyone
+    - Owner can assign any role (admin, guard, user, etc.)
+    - Admin can only assign 'guard' role
+    - Other users cannot assign any roles
+    
+    Returns: (is_allowed: bool, error_message: str)
+    """
+    # Ensure we're working with lists
+    current_user_roles = current_user_roles or []
+    roles_to_assign = roles_to_assign or []
+    
+    # Check if trying to assign owner role
+    if "owner" in roles_to_assign:
+        return False, "Owner role cannot be assigned by anyone"
+    
+    # Owner can assign anything
+    if "owner" in current_user_roles:
+        return True, ""
+    
+    # Admin can only assign guard
+    if "admin" in current_user_roles:
+        for role in roles_to_assign:
+            if role != "guard":
+                return False, f"Admin can only assign 'guard' role, not '{role}'"
+        return True, ""
+    
+    # No other roles can assign
+    return False, "You do not have permission to assign roles"
+
+
+def has_role(role: str):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
