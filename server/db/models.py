@@ -219,6 +219,7 @@ class ParkingLot(Base):
 class Booking(Base):
     __tablename__ = "booking"
     id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=datetime.now())
     user_id = Column(String, ForeignKey("user.id"), nullable=False)
     car_id = Column(Integer, ForeignKey("car.id"), nullable=False)
     status = Column(String, nullable=False)
@@ -239,6 +240,7 @@ class Booking(Base):
     def to_dict(self):
         return {
             "id": self.id,
+            "createdAt": self.created_at,
             "userId": self.user_id,
             "carId": self.car_id,
             "parkingId": self.parking_id,
@@ -253,10 +255,8 @@ class Booking(Base):
             "userId": self.user_id,
             "carId": self.car_id,
             "parkingId": self.parking_id,
-            "parkingObj": SessionLocal.query(Parking)
-            .filter_by(id=self.parking_id)
-            .first()
-            .to_dict(),
+            "carObj": self.car.to_dict() if self.car else None,
+            "parkingObj": self.parking.to_dict() if self.parking else None,
             "status": self.status,
             "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
             "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
