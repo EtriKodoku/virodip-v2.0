@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 from config.config import db_config
 
-engine = create_engine(db_config.DB_CONNECTION, echo=False, future=True)
+engine = create_engine(db_config.DB_CONNECTION, echo=False, future=True, pool_pre_ping=True)
 SessionLocal = scoped_session(
     sessionmaker(bind=engine, autoflush=False, autocommit=False)
 )
@@ -52,7 +52,7 @@ class User(Base):
     __tablename__ = "user"
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     avatar_url = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -180,10 +180,13 @@ class Parking(Base):
     available_spots = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    parking_lots = relationship("ParkingLot", back_populates="parking", cascade="all, delete-orphan")
+    parking_lots = relationship(
+        "ParkingLot", back_populates="parking", cascade="all, delete-orphan"
+    )
     bookings = relationship(
         "Booking", back_populates="parking", cascade="all, delete-orphan"
-    )  # <-- перевірено, має ForeignKey в Booking
+    )
+    devices = relationship("Device", back_populates="parking")
 
     def to_dict(self):
         return {
@@ -216,6 +219,7 @@ class ParkingLot(Base):
 class Booking(Base):
     __tablename__ = "booking"
     id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=datetime.now())
     user_id = Column(String, ForeignKey("user.id"), nullable=False)
     car_id = Column(Integer, ForeignKey("car.id"), nullable=False)
     status = Column(String, nullable=False)
@@ -236,6 +240,7 @@ class Booking(Base):
     def to_dict(self):
         return {
             "id": self.id,
+            "createdAt": self.created_at,
             "userId": self.user_id,
             "carId": self.car_id,
             "parkingId": self.parking_id,
@@ -250,10 +255,52 @@ class Booking(Base):
             "userId": self.user_id,
             "carId": self.car_id,
             "parkingId": self.parking_id,
-            "parkingObj": SessionLocal.query(Parking).filter_by(id=self.parking_id).first().to_dict(),
+            "carObj": self.car.to_dict() if self.car else None,
+            "parkingObj": self.parking.to_dict() if self.parking else None,
             "status": self.status,
             "start": datetime.strftime(self.start, "%Y-%m-%dT%H:%M"),
             "end": datetime.strftime(self.end, "%Y-%m-%dT%H:%M"),
+        }
+
+
+class Device(Base):
+    __tablename__ = "devices"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    serial_number = Column(String(100), unique=True, nullable=False)
+    token = Column(String(200), nullable=True)
+    status = Column(String(50), default="pending")  # pending, active, revoked
+    issued = Column(Boolean, default=False)
+    parking_id = Column(Integer, ForeignKey("parking.id"), nullable=True)
+    cert_serial = Column(String(100), nullable=True)
+    issued_at = Column(DateTime, nullable=True)
+    renewed_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+    parking = relationship("Parking", back_populates="devices")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "serial_number": self.serial_number,
+            "token": self.token,
+            "status": self.status,
+            "issued": self.issued,
+            "parking_id": self.parking_id,
+            "cert_serial": self.cert_serial,
+            "issued_at": (
+                datetime.strftime(self.issued_at, "%Y-%m-%dT%H:%M")
+                if self.issued_at
+                else None
+            ),
+            "renewed_at": (
+                datetime.strftime(self.renewed_at, "%Y-%m-%dT%H:%M")
+                if self.renewed_at
+                else None
+            ),
+            "revoked_at": (
+                datetime.strftime(self.revoked_at, "%Y-%m-%dT%H:%M")
+                if self.revoked_at
+                else None
+            ),
         }
 
 

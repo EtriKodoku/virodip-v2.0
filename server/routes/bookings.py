@@ -1,35 +1,175 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify, g
+from sqlalchemy.orm import joinedload
 from db.models import User, Booking, Parking
+from cast_types.g_types import DbSessionType
+from typing import cast
+from auth.roles import hasRole
 
 booking_bp = Blueprint("booking_bp", __name__)
+
+
+SORT_MAP = {
+    "start": Booking.start,
+    "end": Booking.end,
+    "created_at": Booking.created_at,
+}
 
 
 ## Get bookings for a user
 @booking_bp.route("/<user_id>", methods=["GET"])
 def get_user_bookings(user_id):
+    db: DbSessionType = cast(DbSessionType, g.db)
     try:
-        user = g.db.query(User).filter_by(id=user_id).first()
-        if not user:
-            return jsonify({"error": "User not found"}), 404
+        parking_name = request.args.get("parking_name")
+        status = request.args.get("status")
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        sort = request.args.get("sort")   # e.g. "start", "-end"
+        offset = (page - 1) * per_page
 
-        bookings = [
-            booking.to_dict_extended() for booking in user.bookings
-        ]
-        return jsonify({"booking": bookings}), 200
+        query = db.query(Booking).filter_by(user_id=user_id)
+
+        if parking_name:
+            query = (
+                query
+                .join(Parking, Booking.parking_id == Parking.id)
+                .filter(Parking.name.ilike(f"%{parking_name}%"))
+            )
+
+        if status:
+            query = query.filter(Booking.status == status)
+
+        total = query.count()
+
+        if sort:
+            direction = sort.startswith("-")
+            key = sort.lstrip("-")
+
+            if key in SORT_MAP:
+                column = SORT_MAP[key]
+                query = query.order_by(column.desc() if direction else column.asc())
+        else:
+            # default sorting by created_at DESC
+            query = query.order_by(Booking.created_at.desc())
+
+        bookings = (
+            query
+            .offset(offset)
+            .limit(per_page)
+            .all()
+        )
+
+        result = {
+            "bookings": [booking.to_dict_extended() for booking in bookings],
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+
+        return jsonify(result), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-## Get all bookings
 @booking_bp.route("/", methods=["GET"])
+# @hasRole("admin")  # enable later
 def get_all_bookings():
     try:
-        bookings = g.db.query(Booking).all()
-        return jsonify([booking.to_dict_extended() for booking in bookings]), 200
+        db = g.db
+
+        # Query params
+        user_id = request.args.get("userId", type=str)
+        parking_id = request.args.get("parkingId", type=str)
+        parking_name = request.args.get("parkingName")
+        status = request.args.get("status")
+
+        start_from = request.args.get("start_from")
+        start_to = request.args.get("start_to")
+        end_from = request.args.get("end_from")
+        end_to = request.args.get("end_to")
+
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        offset = (page - 1) * per_page
+
+        sort = request.args.get("sort")
+
+        query = (
+            db.query(Booking)
+            .options(
+                joinedload(Booking.user),
+                joinedload(Booking.car),
+                joinedload(Booking.parking)
+            )
+        )
+
+        # START of filters
+        if user_id:
+            query = query.filter(Booking.user_id == user_id)
+
+        if parking_id:
+            query = query.filter(Booking.parking_id == parking_id)
+
+        if parking_name:
+            query = query.join(Booking.parking).filter(
+                Parking.name.ilike(f"%{parking_name}%")
+            )
+
+        if status:
+            query = query.filter(Booking.status == status)
+
+        if start_from:
+            query = query.filter(Booking.start >= start_from)
+        if start_to:
+            query = query.filter(Booking.start <= start_to)
+
+        if end_from:
+            query = query.filter(Booking.end >= end_from)
+        if end_to:
+            query = query.filter(Booking.end <= end_to)
+        ## END of filters
+
+        total = query.count()
+
+        if sort:
+            direction = sort.startswith("-")
+            key = sort.lstrip("-")
+
+            if key in SORT_MAP:
+                column = SORT_MAP[key]
+                query = query.order_by(column.desc() if direction else column.asc())
+        else:
+            query = query.order_by(Booking.created_at.asc())
+
+        # Pagination
+        bookings = (
+            query.offset(offset)
+                 .limit(per_page)
+                 .all()
+        )
+
+        # Serialize
+        result = {
+            "bookings": [b.to_dict_extended() for b in bookings],
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+
+        return jsonify(result), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 ## Create a new booking
 @booking_bp.route("/", methods=["POST"])
@@ -124,12 +264,13 @@ def delete_booking(booking_id):
         g.db.rollback()
         return jsonify({"error": str(e)}), 500
 
+
 @booking_bp.route("/test", methods=["POST"])
 def test_booking():
-    
+
     data = request.get_json()
     print(data["start"])
-    start=datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),
-    end=datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),
+    start = (datetime.strptime(data["start"], "%Y-%m-%dT%H:%M"),)
+    end = (datetime.strptime(data["end"], "%Y-%m-%dT%H:%M"),)
     print(type(start))
     return jsonify({"start": start, "end": end})
