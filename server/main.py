@@ -15,6 +15,7 @@ from routes.certificates import certificates_bp
 from routes.subscriptions import subscription_bp
 
 from config.logs_config import logger
+from auth.validation import validate_bearer_token
 from whiskey import SimpleMiddleware
 from db.models import init_db, SessionLocal
 
@@ -44,6 +45,26 @@ def create_app():
     @app.before_request
     def create_session():
         g.db = SessionLocal()
+    
+    @app.before_request
+    def extract_user_from_token():
+        """Extract user_id from Bearer token and set it in g"""
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                decoded = validate_bearer_token(token)
+                if decoded:
+                    # Extract user ID from token (usually in 'oid' or 'sub' claim)
+                    user_id = decoded.get("oid") or decoded.get("sub") or decoded.get("user_id")
+                    if user_id:
+                        g.user_id = user_id
+                    logger.debug(f"Extracted user_id from token: {user_id}")
+            except Exception as e:
+                logger.debug(f"Could not extract user from token: {e}")
+                g.user_id = None
+        else:
+            g.user_id = None
 
     @app.before_request
     def log_request_info():

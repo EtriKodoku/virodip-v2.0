@@ -8,7 +8,6 @@ import {
 } from "@/containers/admin/api/index";
 
 import type { GetUserResponseData } from "@/containers/admin/types";
-import { stringifyRoles } from "@/helpers/roleConverters";
 
 export const getUser = async (id: string) => {
   const { bearerToken } = storeToRefs(useAuthStore());
@@ -37,9 +36,10 @@ export const editUserRoles = async (id: string, roles: string[]) => {
     method: "POST",
     headers: {
       Authorization: `Bearer ${bearerToken.value}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      newRoles: stringifyRoles(roles),
+      newRoles: roles,
     }),
   });
 

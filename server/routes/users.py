@@ -6,7 +6,7 @@ from db.models import User, Car, Role, UserRole, Booking, Parking
 from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
-from utils.roles import get_roles, register_roles
+from utils.roles import get_roles, register_roles, can_assign_roles
 from utils.blob_service import delete_blob, generate_sas_url
 
 from typing import cast
@@ -209,6 +209,80 @@ def patch_user(user_id):
 
     except Exception as e:
         db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+## Set user roles
+@user_bp.route("/<string:user_id>/roles", methods=["POST", "PUT"])
+def set_user_roles(user_id):
+    """
+    Set roles for a user with access control.
+    
+    Expects JSON: {"newRoles": ["role1", "role2", ...]} or {"roles": ["role1", "role2", ...]}
+    """
+    data = request.get_json() or {}
+    db: DbSessionType = cast(DbSessionType, g.db)
+    
+    # Try both possible keys
+    new_roles = data.get("newRoles") or data.get("roles") or []
+    
+    if not isinstance(new_roles, list):
+        return jsonify({"error": "roles must be a list"}), 400
+    
+    # Get current user from g (should be set by auth middleware)
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized: current user not found"}), 401
+    
+    try:
+        # Get current user
+        current_user = db.query(User).filter_by(id=current_user_id).first()
+        if not current_user:
+            return jsonify({"error": "Current user not found"}), 401
+        
+        current_user_roles = current_user.get_roles()
+        
+        # Get target user
+        target_user = db.query(User).filter_by(id=user_id).first()
+        if not target_user:
+            return jsonify({"error": "Target user not found"}), 404
+        
+        # Check permissions
+        can_assign, error_msg = can_assign_roles(current_user_roles, new_roles)
+        if not can_assign:
+            return jsonify({"error": error_msg}), 403
+        
+        # Get or create roles in database
+        db_roles = []
+        for role_name in new_roles:
+            role = db.query(Role).filter_by(name=role_name).first()
+            if not role:
+                role = Role(name=role_name)
+                db.add(role)
+                db.flush()
+            db_roles.append(role)
+        
+        # Clear existing roles
+        db.query(UserRole).filter_by(user_id=user_id).delete()
+        db.flush()
+        
+        # Add new roles
+        for role in db_roles:
+            user_role = UserRole(user_id=user_id, role_id=role.id)
+            db.add(user_role)
+        
+        db.commit()
+        
+        # Return updated roles
+        updated_roles = target_user.get_roles()
+        return jsonify({
+            "user_id": user_id,
+            "roles": updated_roles
+        }), 200
+    
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error setting user roles: {e}")
         return jsonify({"error": str(e)}), 500
 
 

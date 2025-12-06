@@ -158,6 +158,12 @@ def update_parking_lot_status(parking_id, lot_index):
     db: DbSessionType = cast(DbSessionType, g.db)
 
     data = request.get_json()
+
+    # God, excuse me for this awfuł shit hard coding
+    # May me never do this level of logging for another pure soul
+    with open("parking_lot_updating.log", 'a') as file:
+        file.writelines(f"\n{datetime.now()} | {parking_id}:{lot_index} | {request.data.decode()}")
+
     parking_lots: list[ParkingLot] = db.query(ParkingLot).filter_by(parking_id=parking_id)
     if data["status"] in options:
         parking_lots[lot_index].status = data["status"]
