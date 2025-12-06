@@ -2,7 +2,7 @@ import requests
 import time
 from flask import Blueprint, request, jsonify, g
 
-from db.models import User, Car, Role, UserRole
+from db.models import User, Car, Role, UserRole, Booking, Parking
 from config.azure_config import azure_config
 from config.logs_config import logger
 from utils.graphAPI import create_b2c_user
@@ -332,7 +332,7 @@ def delete_user_car(user_id, car_id):
         return jsonify({"error": str(e)}), 500
 
 
-## Get user bookings
+## Get user bookings with filters, pagination, sorting
 @user_bp.route("/<string:user_id>/bookings", methods=["GET"])
 def get_user_bookings(user_id):
     db: DbSessionType = cast(DbSessionType, g.db)
@@ -341,8 +341,66 @@ def get_user_bookings(user_id):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        bookings = [booking.to_dict_extended() for booking in user.bookings]
-        return jsonify({"bookings": bookings}), 200
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+
+        parking_name = request.args.get("parking_name")
+        status = request.args.get("status")
+
+        start_from = request.args.get("start_from")
+        start_to = request.args.get("start_to")
+        end_from = request.args.get("end_from")
+        end_to = request.args.get("end_to")
+
+        query = (
+            db.query(Booking)
+                .filter(Booking.user_id == user_id)
+        )
+
+        if parking_name:
+            query = query.join(Parking).filter(Parking.name.ilike(f"%{parking_name}%"))
+
+        if status:
+            query = query.filter(Booking.status == status)
+
+        # Time filters
+        if start_from:
+            query = query.filter(Booking.start >= start_from)
+        if start_to:
+            query = query.filter(Booking.start <= start_to)
+
+        if end_from:
+            query = query.filter(Booking.end >= end_from)
+        if end_to:
+            query = query.filter(Booking.end <= end_to)
+
+        query = query.order_by(Booking.id.asc())
+
+        total = query.count()
+
+        offset = (page - 1) * per_page
+        bookings = (
+            query.offset(offset)
+                 .limit(per_page)
+                 .all()
+        )
+
+        # 8. Serialize
+        bookings_list = [b.to_dict_extended() for b in bookings]
+
+        # 9. Pagination meta
+        result = {
+            "bookings": bookings_list,
+            "total": total,
+            "page": page,
+            "pages": (total + per_page - 1) // per_page,
+            "has_next": offset + per_page < total,
+            "has_prev": page > 1,
+            "next_page": page + 1 if offset + per_page < total else None,
+            "prev_page": page - 1 if page > 1 else None,
+        }
+
+        return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
