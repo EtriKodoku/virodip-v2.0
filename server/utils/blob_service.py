@@ -19,37 +19,14 @@ _BLOB_SERVICE = BlobServiceClient(
     credential=_KEY,
 )
 
-
-def _parse_permissions(p: str):
-    if BlobSasPermissions is None:
-        raise RuntimeError(
-            "azure-storage-blob is not installed; cannot parse permissions"
-        )
-    perms = BlobSasPermissions()
-    if "r" in p:
-        perms.read = True
-    if "w" in p:
-        perms.write = True
-    if "c" in p:
-        perms.create = True
-    if "d" in p:
-        perms.delete = True
-    return perms
-
-
 def generate_sas_url(
     container_name: str,
     blob_name: str,
     expires_in_minutes: int = 5,
     permissions: str = "cw",
 ) -> Dict[str, str]:
-    """Return uploadUrl (blob + SAS) and fileUrl (clean blob url).
 
-    permissions is a string like 'r', 'w', 'rw', 'cw' (create+write),
-    mapped to BlobSasPermissions.
-    """
-
-    perms = _parse_permissions(permissions)
+    perms = BlobSasPermissions.from_string(permissions)
 
     sas_token = generate_blob_sas(
         account_name=_ACCOUNT,
@@ -57,17 +34,20 @@ def generate_sas_url(
         blob_name=blob_name,
         account_key=_KEY,
         permission=perms,
-        expiry=datetime.utcnow() + timedelta(minutes=expires_in_minutes),
         start=datetime.utcnow() - timedelta(minutes=1),
+        expiry=datetime.utcnow() + timedelta(minutes=expires_in_minutes),
         protocol="https",
     )
 
     blob_client = _BLOB_SERVICE.get_blob_client(
-        container=container_name, blob=blob_name
+        container=container_name,
+        blob=blob_name,
     )
-    upload_url = f"{blob_client.url}?{sas_token}"
-    file_url = blob_client.url
-    return {"uploadUrl": upload_url, "fileUrl": file_url}
+
+    return {
+        "uploadUrl": f"{blob_client.url}?{sas_token}",
+        "fileUrl": blob_client.url,
+    }
 
 
 def delete_blob(container_name: str, blob_name: str) -> bool:
